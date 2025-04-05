@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Список стран</h1>
+<ul class="list-group">
+    {% for country in countries %}
+    <li class="list-group-item">{{ country.name }}</li>
+    {% endfor %}
+</ul>
+{% endblock %}
