@@ -19,7 +19,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.contrib.auth import views as auth_views  # Этот импорт критически важен!
-from core.views import country_list, add_country  # Ваши кастомные view
+from core.views import *  # Ваши кастомные view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,8 +27,11 @@ urlpatterns = [
     # Авторизация
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('register/', register, name='register'),
     
     # Ваши URL
     path('countries/', country_list, name='country_list'),
     path('countries/add/', add_country, name='add_country'),
+    path('profile/', profile_view, name='profile'),
+    path('profile/edit/', edit_profile, name='edit_profile'),
 ]

@@ -1,0 +1,26 @@
+{% extends 'base.html' %} {% block content %}
+
+<div class="card">
+  <div class="card-body">
+    <h2 class="card-title">Профиль пользователя</h2>
+    <p class="card-text">
+      <strong>Имя пользователя:</strong> {{ user.username }}
+    </p>
+    <p class="card-text"><strong>Email:</strong> {{ user.email }}</p>
+    <p class="card-text"><strong>Имя:</strong> {{ user.first_name }}</p>
+    <p class="card-text"><strong>Фамилия:</strong> {{ user.last_name }}</p>
+
+    <p>
+      <a href="{% url 'edit_profile' %}" class="text-primary"
+        >Изменить профиль</a
+      >
+    </p>
+
+    <form action="{% url 'logout' %}" method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Выйти</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

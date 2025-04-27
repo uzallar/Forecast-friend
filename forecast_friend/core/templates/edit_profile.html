@@ -1,0 +1,25 @@
+{% extends 'base.html' %} {% block content %}
+<div class="container mt-5">
+  <h2>Редактирование профиля</h2>
+
+  <form method="POST">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="id_first_name" class="form-label">Имя</label>
+      {{ form.first_name }}
+    </div>
+    <div class="mb-3">
+      <label for="id_last_name" class="form-label">Фамилия</label>
+      {{ form.last_name }}
+    </div>
+    <div class="mb-3">
+      <label for="id_email" class="form-label">Email</label>
+      {{ form.email }}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+  </form>
+
+  <a href="{% url 'profile' %}" class="btn btn-secondary mt-3">Отмена</a>
+</div>
+{% endblock %}
