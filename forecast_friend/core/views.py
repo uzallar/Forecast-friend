@@ -2,12 +2,16 @@ from django.shortcuts import render, redirect
 from .forms import CountryForm, RegisterForm, ProfileForm
 from .models import Country
 from django.contrib import messages
+from django.contrib.auth.decorators import user_passes_test
 
 def country_list(request):
     countries = Country.objects.all()
     return render(request, 'core/country_list.html', {'countries': countries})
 
 def add_country(request):
+    if not request.user.is_staff:
+        messages.error(request, 'У вас нет прав доступа к этой странице.')
+        return redirect('profile')
     if request.method == 'POST':
         form = CountryForm(request.POST)
         if form.is_valid():

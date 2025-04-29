@@ -118,7 +118,7 @@ USE_TZ = True
 
 LOGIN_REDIRECT_URL = 'profile'
 LOGOUT_REDIRECT_URL = 'login'
-LOGIN_URL = '/login/'
+LOGIN_URL = 'login'
 LOGOUT_REDIRECT_METHODS = ['GET', 'POST']
 
 
