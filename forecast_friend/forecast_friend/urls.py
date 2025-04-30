@@ -35,4 +35,6 @@ urlpatterns = [
     path('profile/', profile_view, name='profile'),
     path('profile/edit/', edit_profile, name='edit_profile'),
     path('weather/', weather_view, name='weather'),
+    path('add_ticket/', add_ticket_view, name='add_ticket'),
+    path('ticket/<int:pk>/', ticket_detail_view, name='ticket_detail'),
 ]

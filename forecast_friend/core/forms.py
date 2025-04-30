@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.forms import UserChangeForm
+from .models import TravelTicket
 
 class CountryForm(forms.ModelForm):
     class Meta:
@@ -46,3 +47,17 @@ class WeatherForm(forms.Form):
         required=False,
         initial=timezone.now().date
     )
+
+
+
+
+class TicketUploadForm(forms.ModelForm):
+    class Meta:
+        model = TravelTicket
+        fields = ['pdf_file']
+        widgets = {
+            'pdf_file': forms.FileInput(attrs={
+                'accept': '.pdf',
+                'class': 'form-control'
+            })
+        }

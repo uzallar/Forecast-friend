@@ -135,3 +135,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 OPENWEATHERMAP_API_KEY = 'b15d3667a8cc2b97fd3e3a03ded365f6'  # Получите на openweathermap.org
 WEATHER_API_CACHE_TIMEOUT = 60 * 60 
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

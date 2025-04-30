@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4>Информация из билета</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <strong>Страна:</strong> {{ ticket.country }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Город:</strong> {{ ticket.city }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Дата:</strong> {{ ticket.date|date:"d.m.Y" }}
+                        </li>
+                    </ul>
+                    <a href="{% url 'add_ticket' %}" class="btn btn-secondary mt-3">Загрузить новый</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
