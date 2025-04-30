@@ -53,17 +53,13 @@ def edit_profile(request):
 def weather_view(request):
     weather_data = None
     error = None
-    available_cities = City.objects.exclude(latitude__isnull=True).exclude(longitude__isnull=True)
     
     if request.method == 'POST':
         form = WeatherForm(request.POST)
         if form.is_valid():
-            city = form.cleaned_data['city']
+            city_name = form.cleaned_data['city']
             try:
-                city_obj = City.objects.get(name__iexact=city)
-                weather_data = WeatherService.get_weather(city_obj.name)
-            except City.DoesNotExist:
-                error = f"Город '{city}' не найден. Доступные города: {', '.join([c.name for c in available_cities])}"
+                weather_data = WeatherService.get_weather(city_name)
             except ValueError as e:
                 error = str(e)
     else:
@@ -72,6 +68,5 @@ def weather_view(request):
     return render(request, 'core/weather.html', {
         'form': form,
         'weather': weather_data,
-        'error': error,
-        'available_cities': available_cities
+        'error': error
     })
