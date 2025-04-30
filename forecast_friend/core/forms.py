@@ -58,6 +58,7 @@ class TicketUploadForm(forms.ModelForm):
         widgets = {
             'pdf_file': forms.FileInput(attrs={
                 'accept': '.pdf',
-                'class': 'form-control'
+                'class': 'form-control',
+                'required': True
             })
         }

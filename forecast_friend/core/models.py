@@ -42,4 +42,8 @@ class TravelTicket(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.city}, {self.country} - {self.date}"
+        return f"{self.city}, {self.country} - {self.date.strftime('%d.%m.%Y')}"
+
+    class Meta:
+        verbose_name = 'Билет'
+        verbose_name_plural = 'Билеты'

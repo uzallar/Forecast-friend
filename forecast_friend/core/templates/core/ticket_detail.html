@@ -1,26 +1,33 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
+        <div class="col-lg-8">
+            <div class="card shadow">
                 <div class="card-header bg-success text-white">
-                    <h4>Информация из билета</h4>
+                    <h4><i class="bi bi-ticket-detailed"></i> Данные билета</h4>
                 </div>
                 <div class="card-body">
-                    <ul class="list-group">
-                        <li class="list-group-item">
-                            <strong>Страна:</strong> {{ ticket.country }}
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Город:</strong> {{ ticket.city }}
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Дата:</strong> {{ ticket.date|date:"d.m.Y" }}
-                        </li>
-                    </ul>
-                    <a href="{% url 'add_ticket' %}" class="btn btn-secondary mt-3">Загрузить новый</a>
+                    <dl class="row">
+                        <dt class="col-sm-3">Страна:</dt>
+                        <dd class="col-sm-9">{{ ticket.country }}</dd>
+
+                        <dt class="col-sm-3">Город:</dt>
+                        <dd class="col-sm-9">{{ ticket.city }}</dd>
+
+                        <dt class="col-sm-3">Дата:</dt>
+                        <dd class="col-sm-9">{{ formatted_date }}</dd>
+                    </dl>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{{ ticket.pdf_file.url }}" class="btn btn-outline-primary me-md-2" target="_blank">
+                            <i class="bi bi-file-earmark-pdf"></i> Просмотреть PDF
+                        </a>
+                        <a href="{% url 'add_ticket' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Новый билет
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

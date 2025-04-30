@@ -4,6 +4,7 @@ from django.core.cache import cache
 from django.utils import timezone
 from requests.exceptions import RequestException
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -62,3 +63,39 @@ class WeatherService:
         except Exception as e:
             logger.error(f"Ошибка: {e}")
             raise ValueError("Не удалось получить данные о погоде")
+
+def parse_ticket_data(text):
+    """
+    Парсит текст билета в формате:
+    Страна
+    Город
+    Дата
+    """
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    
+    if len(lines) < 3:
+        raise ValueError("Файл должен содержать 3 строки: страна, город и дата")
+    
+    date_formats = [
+        '%d.%m.%Y',  # 01.04.2025
+        '%d/%m/%Y',   # 01/04/2025
+        '%Y-%m-%d',   # 2025-04-01
+        '%d %m %Y',   # 01 04 2025
+    ]
+    
+    date = None
+    for fmt in date_formats:
+        try:
+            date = datetime.strptime(lines[2], fmt).date()
+            break
+        except ValueError:
+            continue
+    
+    if not date:
+        raise ValueError(f"Неизвестный формат даты: {lines[2]}")
+    
+    return {
+        'country': lines[0],
+        'city': lines[1],
+        'date': date
+    }

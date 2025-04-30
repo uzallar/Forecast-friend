@@ -6,9 +6,16 @@ from django.contrib.auth.decorators import user_passes_test
 from .forms import WeatherForm
 from .services import WeatherService
 
+
+import os
 import pdfplumber
+from django.shortcuts import render, redirect
+from django.contrib import messages
 from .forms import TicketUploadForm
 from .models import TravelTicket
+from .services import parse_ticket_data  # Или используйте функцию прямо здесь
+
+from datetime import datetime
 
 def country_list(request):
     countries = Country.objects.all()
@@ -77,7 +84,6 @@ def weather_view(request):
 
 
 
-
 def add_ticket_view(request):
     if request.method == 'POST':
         form = TicketUploadForm(request.POST, request.FILES)
@@ -85,35 +91,38 @@ def add_ticket_view(request):
             ticket = form.save(commit=False)
             
             try:
-                # Парсим PDF
                 with pdfplumber.open(ticket.pdf_file) as pdf:
-                    text = ""
-                    for page in pdf.pages:
-                        text += page.extract_text() + "\n"
+                    text = "\n".join(page.extract_text() for page in pdf.pages)
+                    data = parse_ticket_data(text)
                     
-                    # Простая логика парсинга (может потребоваться доработка)
-                    lines = [line.strip() for line in text.split('\n') if line.strip()]
-                    ticket.country = lines[0] if len(lines) > 0 else "Не указано"
-                    ticket.city = lines[1] if len(lines) > 1 else "Не указано"
-                    
-                    # Парсим дату (пример для формата ДД.ММ.ГГГГ)
-                    from datetime import datetime
-                    try:
-                        ticket.date = datetime.strptime(lines[2], '%d.%m.%Y').date()
-                    except:
-                        ticket.date = datetime.now().date()
-                    
+                    ticket.country = data['country']
+                    ticket.city = data['city']
+                    ticket.date = data['date']
                     ticket.save()
-                    messages.success(request, 'Билет успешно загружен и обработан!')
+                    
+                    messages.success(request, '✅ Билет успешно обработан!')
                     return redirect('ticket_detail', pk=ticket.pk)
                     
             except Exception as e:
-                messages.error(request, f'Ошибка при обработке PDF: {str(e)}')
+                # Удаляем файл если возникла ошибка
+                if hasattr(ticket, 'pdf_file') and ticket.pdf_file:
+                    try:
+                        os.remove(ticket.pdf_file.path)
+                    except:
+                        pass
+                messages.error(request, f'❌ Ошибка: {str(e)}')
     else:
         form = TicketUploadForm()
     
     return render(request, 'core/add_ticket.html', {'form': form})
 
 def ticket_detail_view(request, pk):
-    ticket = TravelTicket.objects.get(pk=pk)
-    return render(request, 'core/ticket_detail.html', {'ticket': ticket})
+    try:
+        ticket = TravelTicket.objects.get(pk=pk)
+        return render(request, 'core/ticket_detail.html', {
+            'ticket': ticket,
+            'formatted_date': ticket.date.strftime('%d.%m.%Y')
+        })
+    except TravelTicket.DoesNotExist:
+        messages.error(request, 'Билет не найден')
+        return redirect('add_ticket')
