@@ -1,5 +1,6 @@
 from django import forms
 from .models import Country
+from django.utils import timezone
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.forms import UserChangeForm
@@ -24,3 +25,24 @@ class ProfileForm(UserChangeForm):
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'email')
+
+
+
+class WeatherForm(forms.Form):
+    city = forms.CharField(
+        label='Город',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Введите название города'
+        })
+    )
+    date = forms.DateField(
+        label='Дата',
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control',
+            'min': timezone.now().date().isoformat()
+        }),
+        required=False,
+        initial=timezone.now().date
+    )

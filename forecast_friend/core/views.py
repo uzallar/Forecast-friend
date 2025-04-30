@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect
 from .forms import CountryForm, RegisterForm, ProfileForm
-from .models import Country
+from .models import City, Country
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
+from .forms import WeatherForm
+from .services import WeatherService
 
 def country_list(request):
     countries = Country.objects.all()
@@ -46,3 +48,30 @@ def edit_profile(request):
         form = ProfileForm(instance=request.user)
 
     return render(request, 'edit_profile.html', {'form': form})
+
+
+def weather_view(request):
+    weather_data = None
+    error = None
+    available_cities = City.objects.exclude(latitude__isnull=True).exclude(longitude__isnull=True)
+    
+    if request.method == 'POST':
+        form = WeatherForm(request.POST)
+        if form.is_valid():
+            city = form.cleaned_data['city']
+            try:
+                city_obj = City.objects.get(name__iexact=city)
+                weather_data = WeatherService.get_weather(city_obj.name)
+            except City.DoesNotExist:
+                error = f"Город '{city}' не найден. Доступные города: {', '.join([c.name for c in available_cities])}"
+            except ValueError as e:
+                error = str(e)
+    else:
+        form = WeatherForm()
+    
+    return render(request, 'core/weather.html', {
+        'form': form,
+        'weather': weather_data,
+        'error': error,
+        'available_cities': available_cities
+    })

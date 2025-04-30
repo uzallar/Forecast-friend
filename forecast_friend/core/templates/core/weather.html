@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4>Проверка погоды</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-primary">Узнать погоду</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {% if weather %}
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4>Погода в {{ weather.city }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-4 text-center">
+                            <img src="https://openweathermap.org/img/w/{{ weather.icon }}.png" alt="Weather icon">
+                            <h3>{{ weather.temperature }}°C</h3>
+                            <p>Ощущается как {{ weather.feels_like }}°C</p>
+                        </div>
+                        <div class="col-8">
+                            <p><strong>Описание:</strong> {{ weather.description|capfirst }}</p>
+                            <p><strong>Влажность:</strong> {{ weather.humidity }}%</p>
+                            <p><strong>Давление:</strong> {{ weather.pressure }} hPa</p>
+                            <p><strong>Ветер:</strong> {{ weather.wind_speed }} м/с</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% elif error %}
+        <div class="col-md-6 mt-3">
+            <div class="alert alert-danger">
+                {{ error }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% if available_cities %}
+<div class="mt-3">
+    <h5>Доступные города:</h5>
+    <ul>
+        {% for city in available_cities %}
+        <li>{{ city.name }}, {{ city.country.name }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+{% endblock %}

@@ -34,4 +34,5 @@ urlpatterns = [
     path('countries/add/', add_country, name='add_country'),
     path('profile/', profile_view, name='profile'),
     path('profile/edit/', edit_profile, name='edit_profile'),
+    path('weather/', weather_view, name='weather'),
 ]

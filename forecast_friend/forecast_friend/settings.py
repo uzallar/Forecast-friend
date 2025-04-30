@@ -131,3 +131,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+OPENWEATHERMAP_API_KEY = 'b15d3667a8cc2b97fd3e3a03ded365f6'  # Получите на openweathermap.org
+WEATHER_API_CACHE_TIMEOUT = 60 * 60 
