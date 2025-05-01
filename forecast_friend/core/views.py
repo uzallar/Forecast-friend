@@ -1,12 +1,10 @@
 from django.shortcuts import render, redirect
-from .forms import CountryForm, RegisterForm, ProfileForm
-from .models import City, Country
+from .forms import CountryForm, RegisterForm, ProfileForm, ReviewForm
+from .models import City, Country, Review
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from .forms import WeatherForm
 from .services import WeatherService
-
-
 import os
 import pdfplumber
 from django.shortcuts import render, redirect
@@ -126,3 +124,19 @@ def ticket_detail_view(request, pk):
     except TravelTicket.DoesNotExist:
         messages.error(request, 'Билет не найден')
         return redirect('add_ticket')
+    
+def review_page(request):
+    reviews = Review.objects.filter(is_visible=True).order_by('-created_at')
+    form = ReviewForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        review = form.save(commit=False)
+        review.user = request.user
+        review.save()
+        return redirect('review_page')
+
+    return render(request, 'reviews.html', {'form': form, 'reviews': reviews})
+
+def delete_review(request, review_id):
+    review = Review.objects.get(id=review_id)
+    review.delete()
+    return redirect('review_page')

@@ -1,0 +1,32 @@
+{% extends 'base.html' %} {% block content %}
+<div class="container mt-5">
+  <h2>Отзывы</h2>
+
+  <form method="post" class="mb-4">
+    {% csrf_token %} {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Оставить отзыв</button>
+  </form>
+
+  <hr />
+
+  {% for review in reviews %}
+  <div class="mb-3">
+    <strong>{{ review.user.username }}</strong>
+    <small class="text-muted">{{ review.created_at|date:"d.m.Y H:i" }}</small>
+    <p>{{ review.text }}</p>
+    {% if user.is_staff %}
+    <form
+      method="post"
+      action="{% url 'delete_review' review.id %}"
+      style="display: inline"
+    >
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+    </form>
+    {% endif %}
+  </div>
+  {% empty %}
+  <p>Пока нет отзывов.</p>
+  {% endfor %}
+</div>
+{% endblock %}

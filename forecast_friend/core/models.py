@@ -47,3 +47,12 @@ class TravelTicket(models.Model):
     class Meta:
         verbose_name = 'Билет'
         verbose_name_plural = 'Билеты'
+
+class Review(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField("Текст отзыва")
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_visible = models.BooleanField(default=True)  # 👈 для скрытия/показа
+
+    def __str__(self):
+        return f"Отзыв от {self.user.username}"

@@ -28,6 +28,9 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', register, name='register'),
+    path('reviews/', review_page, name='review_page'),
+    path('reviews/delete/<int:review_id>/', delete_review, name='delete_review'),
+
     
     # Ваши URL
     path('countries/', country_list, name='country_list'),

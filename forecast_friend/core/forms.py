@@ -1,5 +1,5 @@
 from django import forms
-from .models import Country
+from .models import Country, Review
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
@@ -61,4 +61,12 @@ class TicketUploadForm(forms.ModelForm):
                 'class': 'form-control',
                 'required': True
             })
+        }
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ['text']
+        widgets = {
+            'text': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Оставьте ваш отзыв...'}),
         }
