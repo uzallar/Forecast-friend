@@ -13,7 +13,7 @@ class LoginRequiredMiddleware:
     def __call__(self, request):
         login_url = reverse('login')
         # страницы, на которые можно без авторизации
-        allowed_urls = [login_url, reverse('register')]  
+        allowed_urls = [login_url, reverse('register'), reverse('review_page')]  
 
         if not request.user.is_authenticated and request.path not in allowed_urls:
             return redirect(login_url)

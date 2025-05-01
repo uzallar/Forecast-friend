@@ -112,7 +112,9 @@
             {% endif %} {% endif %}
           </li>
           <li class="nav-item">
-            <a class="nav-link text-white" href="#">Настройки</a>
+            <a class="nav-link text-white" href="{% url 'review_page' %}"
+              >Отзывы</a
+            >
           </li>
           <li class="nav-item">
             <form action="{% url 'logout' %}" method="post">

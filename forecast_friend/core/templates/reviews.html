@@ -2,10 +2,12 @@
 <div class="container mt-5">
   <h2>Отзывы</h2>
 
+  {% if user.is_authenticated %}
   <form method="post" class="mb-4">
     {% csrf_token %} {{ form.as_p }}
     <button type="submit" class="btn btn-primary">Оставить отзыв</button>
   </form>
+  {% endif %}
 
   <hr />
 
