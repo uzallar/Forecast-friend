@@ -140,3 +140,11 @@ def delete_review(request, review_id):
     review = Review.objects.get(id=review_id)
     review.delete()
     return redirect('review_page')
+
+def travel_recommendations(request):
+    # Здесь будет логика для рекомендаций по поездке
+    return render(request, 'core/travel_recommendations.html')
+
+def add_admin(request):
+    # Здесь будет логика для рекомендаций по поездке
+    return render(request, 'core/add_admin.html')

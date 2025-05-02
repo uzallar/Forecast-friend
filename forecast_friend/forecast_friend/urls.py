@@ -28,8 +28,6 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', register, name='register'),
-    path('reviews/', review_page, name='review_page'),
-    path('reviews/delete/<int:review_id>/', delete_review, name='delete_review'),
 
     
     # Ваши URL
@@ -40,4 +38,8 @@ urlpatterns = [
     path('weather/', weather_view, name='weather'),
     path('add_ticket/', add_ticket_view, name='add_ticket'),
     path('ticket/<int:pk>/', ticket_detail_view, name='ticket_detail'),
+     path('recommendations/', travel_recommendations, name='travel_recommendations'),
+    path('admin/', add_admin, name='add_admin'),
+    path('reviews/', review_page, name='review_page'),
+    path('reviews/delete/<int:review_id>/', delete_review, name='delete_review'),
 ]
