@@ -38,12 +38,26 @@ class TravelTicket(models.Model):
     country = models.CharField(max_length=100)
     city = models.CharField(max_length=100)
     date = models.DateField()
-    pdf_file = models.FileField(upload_to='tickets/')
+    pdf_file = models.FileField(upload_to='tickets/pdfs/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.city}, {self.country} - {self.date.strftime('%d.%m.%Y')}"
 
     class Meta:
+        verbose_name = 'Билет'
+        verbose_name_plural = 'Билеты'
+
+class Ticket(models.Model):
+    country = models.CharField(max_length=100)
+    city = models.CharField(max_length=100)
+    date = models.DateField()
+    pdf_file = models.FileField(upload_to='tickets/pdfs/', blank=True, null=True)
+    ticket_image = models.ImageField(upload_to='tickets/images/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+def __str__(self):
+        return f"{self.country} - {self.city} ({self.date.strftime('%d.%m.%Y')})"
+class Meta:
         verbose_name = 'Билет'
         verbose_name_plural = 'Билеты'

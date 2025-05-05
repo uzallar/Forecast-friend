@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from .forms import WeatherForm
 from .services import WeatherService
-
+from .forms import TicketForm
 
 import os
 import pdfplumber
@@ -13,6 +13,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from .forms import TicketUploadForm
 from .models import TravelTicket
+from .models import Ticket
 from .services import parse_ticket_data  # Или используйте функцию прямо здесь
 
 from datetime import datetime
@@ -86,42 +87,81 @@ def weather_view(request):
 
 def add_ticket_view(request):
     if request.method == 'POST':
-        form = TicketUploadForm(request.POST, request.FILES)
+        # Определяем какую форму использовать
+        if 'pdf_file' in request.FILES:
+            form = TicketUploadForm(request.POST, request.FILES)
+        else:
+            form = TicketForm(request.POST)
+
         if form.is_valid():
-            ticket = form.save(commit=False)
+            ticket = form.save(commit=False)  # Создаем ticket только после валидации
             
-            try:
-                with pdfplumber.open(ticket.pdf_file) as pdf:
-                    text = "\n".join(page.extract_text() for page in pdf.pages)
-                    data = parse_ticket_data(text)
-                    
-                    ticket.country = data['country']
-                    ticket.city = data['city']
-                    ticket.date = data['date']
-                    ticket.save()
-                    
-                    messages.success(request, '✅ Билет успешно обработан!')
-                    return redirect('ticket_detail', pk=ticket.pk)
-                    
-            except Exception as e:
-                # Удаляем файл если возникла ошибка
-                if hasattr(ticket, 'pdf_file') and ticket.pdf_file:
-                    try:
-                        os.remove(ticket.pdf_file.path)
-                    except:
-                        pass
-                messages.error(request, f'❌ Ошибка: {str(e)}')
+            # Обработка PDF
+            if 'pdf_file' in request.FILES:
+                try:
+                    with pdfplumber.open(ticket.pdf_file) as pdf:
+                        text = "\n".join(page.extract_text() for page in pdf.pages)
+                        data = parse_ticket_data(text)
+                        
+                        # Обновляем данные из PDF
+                        ticket.country = data.get('country', '')
+                        ticket.city = data.get('city', '')
+                        ticket.date = data.get('date', None)
+                        
+                        messages.success(request, '✅ Билет успешно обработан из PDF!')
+                except Exception as e:
+                    if hasattr(ticket, 'pdf_file') and ticket.pdf_file:
+                        try:
+                            os.remove(ticket.pdf_file.path)
+                        except:
+                            pass
+                    messages.error(request, f'❌ Ошибка обработки PDF: {str(e)}')
+                    return render(request, 'core/add_ticket.html', {
+                        'pdf_form': TicketUploadForm(),
+                        'text_form': TicketForm()
+                    })
+            else:
+                ticket.country = form.cleaned_data.get('country', '')
+                ticket.city = form.cleaned_data.get('city', '')
+                ticket.date = form.cleaned_data.get('date','')
+                messages.info(request, 'Данные взяты из текстовых полей')
+            
+            
+            # Сохраняем билет в любом случае
+            ticket.save()
+            return redirect('ticket_detail', pk=ticket.pk)
+        
+        # Если форма не валидна
+        messages.error(request, 'Пожалуйста, исправьте ошибки в форме')
     else:
+        # При GET-запросе
         form = TicketUploadForm()
+
+    # Всегда возвращаем форму (при GET или невалидном POST)
+    return render(request, 'core/add_ticket.html', {
+        'pdf_form': TicketUploadForm(),
+        'text_form': TicketForm()
+    })
     
-    return render(request, 'core/add_ticket.html', {'form': form})
+   
 
 def ticket_detail_view(request, pk):
     try:
-        ticket = TravelTicket.objects.get(pk=pk)
+        if 'pdf_file' in request.FILES:
+            ticket = TravelTicket.objects.get(pk=pk)
+        else:
+            ticket=Ticket.objects.get(pk=pk)
+        
+        # Форматируем дату
+        formatted_date = ticket.date.strftime('%d.%m.%Y') if ticket.date else 'Дата не указана' 
+        
+        # Проверяем источник данных
+        data_source = 'PDF' if ticket.pdf_file else 'текстовые поля'
+        
         return render(request, 'core/ticket_detail.html', {
             'ticket': ticket,
-            'formatted_date': ticket.date.strftime('%d.%m.%Y')
+            'formatted_date': formatted_date,
+            'data_source': data_source
         })
     except TravelTicket.DoesNotExist:
         messages.error(request, 'Билет не найден')
