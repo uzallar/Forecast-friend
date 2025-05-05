@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -135,10 +136,15 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-OPENWEATHERMAP_API_KEY = 'b15d3667a8cc2b97fd3e3a03ded365f6'  # Получите на openweathermap.org
+
+load_dotenv()  # Загружает переменные из .env
+
+OPENWEATHERMAP_API_KEY = os.getenv('OPENWEATHERMAP_API_KEY')
 WEATHER_API_CACHE_TIMEOUT = 60 * 60 
 
 # Где-то в конце файла:
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
 
