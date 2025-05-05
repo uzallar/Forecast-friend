@@ -5,12 +5,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from .forms import WeatherForm
 from .services import WeatherService
+from .forms import TicketForm
 import os
 import pdfplumber
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .forms import TicketUploadForm
 from .models import TravelTicket
+from .models import Ticket
 from .services import parse_ticket_data  # Или используйте функцию прямо здесь
 
 from datetime import datetime
@@ -81,49 +83,80 @@ def weather_view(request):
     })
 
 
-
 def add_ticket_view(request):
     if request.method == 'POST':
-        form = TicketUploadForm(request.POST, request.FILES)
+        # Определяем какую форму использовать
+        if 'pdf_file' in request.FILES:
+            form = TicketUploadForm(request.POST, request.FILES)
+            is_pdf = True
+        else:
+            form = TicketForm(request.POST)
+            is_pdf = False
+
         if form.is_valid():
-            ticket = form.save(commit=False)
-            
             try:
-                with pdfplumber.open(ticket.pdf_file) as pdf:
-                    text = "\n".join(page.extract_text() for page in pdf.pages)
-                    data = parse_ticket_data(text)
+                if is_pdf:
+                    # Создаем объект билета, но пока не сохраняем
+                    ticket = form.save(commit=False)
                     
-                    ticket.country = data['country']
-                    ticket.city = data['city']
-                    ticket.date = data['date']
-                    ticket.save()
-                    
-                    messages.success(request, '✅ Билет успешно обработан!')
+                    # Обработка PDF
+                    with pdfplumber.open(ticket.pdf_file) as pdf:
+                        text = "\n".join(page.extract_text() for page in pdf.pages)
+                        data = parse_ticket_data(text)
+                        
+                        # Заполняем поля из распарсенных данных
+                        ticket.country = data.get('country', '')
+                        ticket.city = data.get('city', '')
+                        ticket.date = data.get('date', None)
+                        
+                        # Сохраняем билет в базу
+                        ticket.save()
+                        
+                        messages.success(request, '✅ Билет успешно обработан из PDF!')
+                        return redirect('ticket_detail', pk=ticket.pk)
+                else:
+                    # Обработка обычной формы
+                    ticket = form.save()
+                    messages.success(request, '✅ Билет успешно сохранён!')
                     return redirect('ticket_detail', pk=ticket.pk)
                     
             except Exception as e:
-                # Удаляем файл если возникла ошибка
-                if hasattr(ticket, 'pdf_file') and ticket.pdf_file:
+                # Удаляем временный файл, если он был создан
+                if is_pdf and 'ticket' in locals() and hasattr(ticket, 'pdf_file'):
                     try:
                         os.remove(ticket.pdf_file.path)
                     except:
                         pass
+                
                 messages.error(request, f'❌ Ошибка: {str(e)}')
-    else:
-        form = TicketUploadForm()
+                return render(request, 'core/add_ticket.html', {
+                    'pdf_form': TicketUploadForm(),
+                    'text_form': TicketForm()
+                })
     
-    return render(request, 'core/add_ticket.html', {'form': form})
+    # GET запрос или невалидная форма
+    return render(request, 'core/add_ticket.html', {
+        'pdf_form': TicketUploadForm(),
+        'text_form': TicketForm()
+    })
+
+from django.shortcuts import get_object_or_404
 
 def ticket_detail_view(request, pk):
-    try:
-        ticket = TravelTicket.objects.get(pk=pk)
-        return render(request, 'core/ticket_detail.html', {
-            'ticket': ticket,
-            'formatted_date': ticket.date.strftime('%d.%m.%Y')
-        })
-    except TravelTicket.DoesNotExist:
-        messages.error(request, 'Билет не найден')
-        return redirect('add_ticket')
+    # Пробуем найти билет в обеих моделях
+    ticket = get_object_or_404(Ticket, pk=pk) if Ticket.objects.filter(pk=pk).exists() else get_object_or_404(TravelTicket, pk=pk)
+    
+    # Форматируем дату
+    formatted_date = ticket.date.strftime('%d.%m.%Y') if ticket.date else 'Дата не указана'
+    
+    # Проверяем источник данных
+    data_source = 'PDF' if hasattr(ticket, 'pdf_file') and ticket.pdf_file else 'текстовые поля'
+    
+    return render(request, 'core/ticket_detail.html', {
+        'ticket': ticket,
+        'formatted_date': formatted_date,
+        'data_source': data_source
+    })
     
 def review_page(request):
     reviews = Review.objects.filter(is_visible=True).order_by('-created_at')

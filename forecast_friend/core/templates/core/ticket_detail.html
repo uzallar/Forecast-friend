@@ -1,31 +1,60 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+
             <div class="card shadow">
                 <div class="card-header bg-success text-white">
-                    <h4><i class="bi bi-ticket-detailed"></i> Данные билета</h4>
+                    <h4><i class="bi bi-ticket-detailed"></i> Данные билета #{{ ticket.id }}</h4>
                 </div>
                 <div class="card-body">
                     <dl class="row">
+                        <dt class="col-sm-3">Источник данных:</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-{% if ticket.pdf_file %}success{% else %}info{% endif %}">
+                                {% if ticket.pdf_file %}PDF{% else %}Ручной ввод{% endif %}
+                            </span>
+                        </dd>
+
                         <dt class="col-sm-3">Страна:</dt>
-                        <dd class="col-sm-9">{{ ticket.country }}</dd>
+                        <dd class="col-sm-9">{{ ticket.country|default:"Не указана" }}</dd>
 
                         <dt class="col-sm-3">Город:</dt>
-                        <dd class="col-sm-9">{{ ticket.city }}</dd>
+                        <dd class="col-sm-9">{{ ticket.city|default:"Не указан" }}</dd>
 
                         <dt class="col-sm-3">Дата:</dt>
-                        <dd class="col-sm-9">{{ formatted_date }}</dd>
+                        <dd class="col-sm-9">
+                            {% if ticket.date %}
+                            {{ ticket.date|date:"d.m.Y" }}
+                            {% else %}
+                            Не указана
+                            {% endif %}
+                        </dd>
                     </dl>
 
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                        <a href="{{ ticket.pdf_file.url }}" class="btn btn-outline-primary me-md-2" target="_blank">
+                    {% if ticket.pdf_file %}
+                    <div class="mt-3">
+                        <a href="{{ ticket.pdf_file.url }}" class="btn btn-outline-primary" target="_blank">
                             <i class="bi bi-file-earmark-pdf"></i> Просмотреть PDF
                         </a>
+                        <span class="ms-2 text-muted">({{ ticket.pdf_file.size|filesizeformat }})</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                         <a href="{% url 'add_ticket' %}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Новый билет
+                            <i class="bi bi-plus-circle"></i> Добавить новый билет
                         </a>
                     </div>
                 </div>

@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-lg-10">
             {% if messages %}
             {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
@@ -18,32 +19,109 @@
                     <h4><i class="bi bi-upload"></i> Загрузка билета</h4>
                 </div>
                 <div class="card-body">
-                    <form method="post" enctype="multipart/form-data" novalidate>
-                        {% csrf_token %}
+                    <div class="row">
+                        <!-- Левая колонка с изображением билета -->
+                        <div class="col-md-6 position-relative mb-4 mb-md-0">
+                            <img src="{% static '5230968024624917672.jpg' %}" class="img-fluid border rounded"
+                                alt="Авиабилет" style="max-height: 500px; width: 100%; object-fit: contain;">
 
-                        <div class="mb-3">
-                            {{ form.pdf_file.label_tag }}
-                            {{ form.pdf_file }}
-                            <div class="form-text">
-                                Загрузите PDF-файл с данными в формате:<br>
-                                1. Страна<br>
-                                2. Город<br>
-                                3. Дата (дд.мм.гггг)
+                            <!-- Поля ввода поверх изображения -->
+                            <div class="position-absolute" style="top: 28%; left: 15%; right: 15%;">
+                                <input type="text" class="form-control mb-2 bg-white opacity-90" id="ticket-country"
+                                    name="country" placeholder="Страна"
+                                    value="{% if form.country.value %}{{ form.country.value }}{% endif %}">
                             </div>
-                            {% if form.pdf_file.errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ form.pdf_file.errors|join:", " }}
+                            <div class="position-absolute" style="top: 43%; left: 15%; right: 15%;">
+                                <input type="text" class="form-control mb-2 bg-white opacity-90" id="ticket-city"
+                                    name="city" placeholder="Город"
+                                    value="{% if form.city.value %}{{ form.city.value }}{% endif %}">
                             </div>
-                            {% endif %}
+                            <div class="position-absolute" style="top: 58%; left: 15%; right: 15%;">
+                                <input type="text" class="form-control bg-white opacity-90" id="ticket-date" name="date"
+                                    placeholder="ДД.ММ.ГГГГ"
+                                    value="{% if form.date.value %}{{ form.date.value }}{% endif %}">
+                            </div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100 py-2">
-                            <i class="bi bi-check-circle"></i> Отправить
-                        </button>
-                    </form>
+                        <!-- Правая колонка с формой -->
+                        <div class="col-md-6">
+                            <form method="post" enctype="multipart/form-data" id="ticket-form">
+                                {% csrf_token %}
+
+                                <!-- Скрытые поля для текстовых данных -->
+                                <input type="hidden" id="hidden-country" name="country">
+                                <input type="hidden" id="hidden-city" name="city">
+                                <input type="hidden" id="hidden-date" name="date">
+
+                                <div class="mb-3">
+                                    <label for="pdf_file" class="form-label">PDF файл билета (необязательно)</label>
+                                    <input type="file" class="form-control" id="pdf_file" name="pdf_file" accept=".pdf">
+                                    <div class="form-text">
+                                        Загрузите PDF-файл с данными в формате:<br>
+                                        1. Страна<br>
+                                        2. Город<br>
+                                        3. Дата (дд.мм.гггг)
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-100 py-2">
+                                    <i class="bi bi-check-circle"></i> Отправить
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('ticket-form');
+        const pdfInput = document.getElementById('pdf_file');
+        const countryInput = document.getElementById('ticket-country');
+        const cityInput = document.getElementById('ticket-city');
+        const dateInput = document.getElementById('ticket-date');
+        const hiddenCountry = document.getElementById('hidden-country');
+        const hiddenCity = document.getElementById('hidden-city');
+        const hiddenDate = document.getElementById('hidden-date');
+
+        function syncFields() {
+            hiddenCountry.value = countryInput.value;
+            hiddenCity.value = cityInput.value;
+            hiddenDate.value = dateInput.value;
+        }
+
+        function validateForm() {
+            // Если есть PDF, очищаем текстовые поля перед отправкой
+            if (pdfInput.files.length > 0) {
+                hiddenCountry.value = '';
+                hiddenCity.value = '';
+                hiddenDate.value = '';
+                return true;
+            }
+
+            // Если PDF нет, проверяем заполнение текстовых полей
+            if (!countryInput.value || !cityInput.value || !dateInput.value) {
+                alert('Заполните все поля или загрузите PDF файл');
+                return false;
+            }
+
+            // Синхронизируем поля перед отправкой
+            syncFields();
+            return true;
+        }
+
+        form.addEventListener('submit', function (e) {
+            if (!validateForm()) {
+                e.preventDefault();
+            }
+        });
+
+        // Инициализация значений при загрузке
+        syncFields();
+    });
+</script>
+
 {% endblock %}

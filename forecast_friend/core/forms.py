@@ -49,8 +49,6 @@ class WeatherForm(forms.Form):
     )
 
 
-
-
 class TicketUploadForm(forms.ModelForm):
     class Meta:
         model = TravelTicket
@@ -63,6 +61,58 @@ class TicketUploadForm(forms.ModelForm):
             })
         }
 
+
+from django import forms
+from .models import Ticket
+from datetime import datetime
+
+class TicketForm(forms.ModelForm):
+    # Обязательное поле с явной валидацией формата
+    date = forms.CharField(
+        label='Дата (ДД.ММ.ГГГГ)',
+        required=True,  # Поле обязательно
+        widget=forms.TextInput(attrs={
+            'placeholder': 'ДД.ММ.ГГГГ',
+            'pattern': r'\d{2}\.\d{2}\.\d{4}',
+            'title': 'Введите дату в формате ДД.ММ.ГГГГ'
+        })
+    )
+
+    class Meta:
+        model = Ticket
+        fields = ['country', 'city', 'date', 'pdf_file', 'ticket_image']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['pdf_file'].required = False
+        self.fields['country'].required = False
+        self.fields['city'].required = False
+
+    def clean_date(self):
+        date_str = self.cleaned_data.get('date')
+        if not date_str:
+            raise forms.ValidationError("Это поле обязательно")
+
+        try:
+            # Удаляем возможные пробелы и преобразуем
+            date_str = date_str.strip()
+            return datetime.strptime(date_str, '%d.%m.%Y').date()
+        except ValueError:
+            raise forms.ValidationError("Неверный формат. Требуется ДД.ММ.ГГГГ")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        pdf_file = cleaned_data.get('pdf_file')
+        country = cleaned_data.get('country')
+        city = cleaned_data.get('city')
+
+        # Проверяем либо PDF, либо все текстовые поля
+        if not pdf_file and not (country and city):
+            raise forms.ValidationError(
+                "Заполните страну и город или загрузите PDF файл"
+            )
+        return cleaned_data
+
 class ReviewForm(forms.ModelForm):
     class Meta:
         model = Review
@@ -70,3 +120,4 @@ class ReviewForm(forms.ModelForm):
         widgets = {
             'text': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Оставьте ваш отзыв...'}),
         }
+
