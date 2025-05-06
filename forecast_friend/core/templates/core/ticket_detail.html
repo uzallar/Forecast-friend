@@ -51,7 +51,13 @@
                         <span class="ms-2 text-muted">({{ ticket.pdf_file.size|filesizeformat }})</span>
                     </div>
                     {% endif %}
-
+                    <!-- Новая кнопка для рекомендаций -->
+                    <div class="mt-4">
+                        <a href="{% url 'weather' %}?city={{ ticket.city|urlencode }}&date={{ ticket.date|date:'Y-m-d' }}"
+                            class="btn btn-success">
+                            <i class="bi bi-cloud-sun"></i> Составить рекомендации
+                        </a>
+                    </div>
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                         <a href="{% url 'add_ticket' %}" class="btn btn-primary">
                             <i class="bi bi-plus-circle"></i> Добавить новый билет

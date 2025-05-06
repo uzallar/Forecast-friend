@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from .forms import CountryForm, RegisterForm, ProfileForm, ReviewForm
 from .models import City, Country, Review
 from django.contrib import messages
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import login_required, user_passes_test
 from .forms import WeatherForm
 from .services import WeatherService
 from .forms import TicketForm
@@ -18,9 +18,41 @@ from .services import parse_ticket_data  # Или используйте фун�
 from datetime import datetime
 
 def country_list(request):
-    countries = Country.objects.all()
-    return render(request, 'core/country_list.html', {'countries': countries})
+    search_query = request.GET.get('search', '')
+    
+    if search_query:
+        countries = Country.objects.filter(name__istartswith=search_query)
+    else:
+        countries = Country.objects.all()
+    
+    return render(request, 'core/country_list.html', {
+        'countries': countries,
+        'search_query': search_query
+    })
 
+def edit_country(request, country_id):
+    country = get_object_or_404(Country, id=country_id)
+    if request.method == 'POST':
+        form = CountryForm(request.POST, instance=country)
+        if form.is_valid():
+            form.save()
+            return redirect('country_list')
+    else:
+        form = CountryForm(instance=country)
+    
+    return render(request, 'core/edit_country.html', {
+        'form': form,
+        'country': country
+    })
+
+def delete_country(request, country_id):
+    country = get_object_or_404(Country, id=country_id)
+    if request.method == 'POST':
+        country.delete()
+        return redirect('country_list')
+    return render(request, 'core/confirm_delete.html', {'country': country})
+
+@user_passes_test(lambda u: u.is_staff)
 def add_country(request):
     if not request.user.is_staff:
         messages.error(request, 'У вас нет прав доступа к этой странице.')
@@ -59,27 +91,55 @@ def edit_profile(request):
         form = ProfileForm(instance=request.user)
 
     return render(request, 'edit_profile.html', {'form': form})
-
-
 def weather_view(request):
     weather_data = None
     error = None
+    initial_data = {}
+    auto_fetch = False
+    ticket_id = None
+    
+    # Получаем параметры из GET-запроса
+    if 'city' in request.GET:
+        initial_data['city'] = request.GET['city']
+        auto_fetch = True
+    
+    if 'date' in request.GET:
+        initial_data['date'] = request.GET['date']
+    
+    if 'ticket_id' in request.GET:
+        ticket_id = request.GET['ticket_id']
     
     if request.method == 'POST':
         form = WeatherForm(request.POST)
         if form.is_valid():
             city_name = form.cleaned_data['city']
+            date = form.cleaned_data.get('date')
             try:
-                weather_data = WeatherService.get_weather(city_name)
+                weather_data = WeatherService.get_weather(city_name, date=date)
+                weather_data['city'] = city_name
+                # Всегда добавляем дату, даже если она не указана в форме
+                weather_data['date'] = date if date else timezone.now().date()
             except ValueError as e:
                 error = str(e)
     else:
-        form = WeatherForm()
+        form = WeatherForm(initial=initial_data)
+        
+        if auto_fetch and initial_data['city']:
+            try:
+                date = initial_data.get('date')
+                weather_data = WeatherService.get_weather(initial_data['city'], date=date)
+                weather_data['city'] = initial_data['city']
+                # Всегда добавляем дату
+                weather_data['date'] = date if date else timezone.now().date()
+            except ValueError as e:
+                error = str(e)
     
     return render(request, 'core/weather.html', {
         'form': form,
         'weather': weather_data,
-        'error': error
+        'error': error,
+        'auto_fetched': auto_fetch,
+        'ticket_id': ticket_id
     })
 
 

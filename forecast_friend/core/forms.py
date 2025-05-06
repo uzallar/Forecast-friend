@@ -5,11 +5,21 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.forms import UserChangeForm
 from .models import TravelTicket
+from .models import Ticket
+from datetime import datetime
 
 class CountryForm(forms.ModelForm):
     class Meta:
         model = Country
         fields = ['name', 'description']
+
+# class CountryForm(forms.ModelForm):
+#     class Meta:
+#         model = Country
+#         fields = ['name', 'description']
+#         widgets = {
+#             'description': forms.Textarea(attrs={'rows': 3}),
+#         }
 
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -29,6 +39,7 @@ class ProfileForm(UserChangeForm):
 
 
 
+# forecast_friend/core/forms.py
 class WeatherForm(forms.Form):
     city = forms.CharField(
         label='Город',
@@ -48,6 +59,15 @@ class WeatherForm(forms.Form):
         initial=timezone.now().date
     )
 
+    def __init__(self, *args, **kwargs):
+        initial = kwargs.get('initial', {})
+        super().__init__(*args, **kwargs)
+        
+        # Устанавливаем начальные значения, если они переданы
+        if 'city' in initial:
+            self.fields['city'].initial = initial['city']
+        if 'date' in initial:
+            self.fields['date'].initial = initial['date']
 
 class TicketUploadForm(forms.ModelForm):
     class Meta:
@@ -62,9 +82,6 @@ class TicketUploadForm(forms.ModelForm):
         }
 
 
-from django import forms
-from .models import Ticket
-from datetime import datetime
 
 class TicketForm(forms.ModelForm):
     # Обязательное поле с явной валидацией формата
