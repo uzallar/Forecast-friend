@@ -9,6 +9,20 @@ class Country(models.Model):
     def __str__(self):
         return self.name
 
+    def get_visits_chart_data(self):
+        visits = list(self.visits.all().order_by('month'))
+        if not visits:
+            visits = [CountryVisit(visit_count=0) for _ in range(12)]
+        
+        max_visits = max(v.visit_count for v in visits) if any(v.visit_count for v in visits) else 1
+        
+        return {
+            'months': ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 
+                      'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+            'visits': visits,
+            'max_visits': max_visits
+        }
+
 class City(models.Model):
     country = models.ForeignKey(Country, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
@@ -71,3 +85,15 @@ class Review(models.Model):
 
     def __str__(self):
         return f"Отзыв от {self.user.username}"
+
+class CountryVisit(models.Model):
+    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='visits')
+    month = models.PositiveSmallIntegerField()  # 1-12
+    visit_count = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        unique_together = ('country', 'month')
+        ordering = ['month']
+    
+    def __str__(self):
+        return f"{self.country.name} - {self.month}: {self.visit_count} visits"

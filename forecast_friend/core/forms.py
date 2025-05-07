@@ -13,13 +13,7 @@ class CountryForm(forms.ModelForm):
         model = Country
         fields = ['name', 'description']
 
-# class CountryForm(forms.ModelForm):
-#     class Meta:
-#         model = Country
-#         fields = ['name', 'description']
-#         widgets = {
-#             'description': forms.Textarea(attrs={'rows': 3}),
-#         }
+
 
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)

@@ -16,7 +16,6 @@
                     <small>Ощущается как {{ weather.feels_like }}°C</small>
                 </div>
                 <div class="col-8">
-                    <p><strong>Дата:</strong> {{ weather.date|date:"d.m.Y" }}</p>
                     <p><strong>Состояние:</strong> {{ weather.description|capfirst }}</p>
                     <p><strong>Влажность:</strong> {{ weather.humidity }}%</p>
                     <p><strong>Давление:</strong> {{ weather.pressure }} hPa</p>

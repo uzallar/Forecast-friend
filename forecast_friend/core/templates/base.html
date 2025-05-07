@@ -92,7 +92,7 @@
         {% else %}
         <!-- пункты меню для обычных пользователей -->
         <li class="nav-item">
-          <a class="nav-link text-white" href="{% url 'travel_recommendations' %}">Главная</a>
+          <a class="nav-link text-white" href="{% url 'country_list' %}">Главная</a>
         </li>
         <li class="nav-item">
           <a class="nav-link text-white" href="{% url 'add_ticket' %}">Рекомендации к поездке</a>
@@ -116,6 +116,12 @@
         </li>
         <li class="nav-item">
           <a class="nav-link text-white" href="{% url 'register' %}">Регистрация</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-white" href="{% url 'review_page' %}">Отзывы</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-white" href="{% url 'country_list' %}">Главная</a>
         </li>
         {% endif %}
       </ul>

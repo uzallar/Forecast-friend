@@ -17,20 +17,30 @@ from .services import parse_ticket_data  # Или используйте фун�
 
 from datetime import datetime
 
+from django.shortcuts import render
+from .models import Country
+
 def country_list(request):
-    search_query = request.GET.get('search', '')
+    search_query = request.GET.get('search', '').title().strip()
     
     if search_query:
-        countries = Country.objects.filter(name__istartswith=search_query)
+        countries = Country.objects.filter(name__icontains=search_query)
     else:
         countries = Country.objects.all()
+    
+    countries = countries.prefetch_related('visits')
     
     return render(request, 'core/country_list.html', {
         'countries': countries,
         'search_query': search_query
     })
 
+
+
 def edit_country(request, country_id):
+    if not request.user.is_staff:
+        messages.error(request, 'У вас нет прав доступа к этой странице.')
+        return redirect('profile')
     country = get_object_or_404(Country, id=country_id)
     if request.method == 'POST':
         form = CountryForm(request.POST, instance=country)
@@ -45,14 +55,18 @@ def edit_country(request, country_id):
         'country': country
     })
 
+
 def delete_country(request, country_id):
+    if not request.user.is_staff:
+        messages.error(request, 'У вас нет прав доступа к этой странице.')
+        return redirect('profile')
     country = get_object_or_404(Country, id=country_id)
     if request.method == 'POST':
         country.delete()
         return redirect('country_list')
     return render(request, 'core/confirm_delete.html', {'country': country})
 
-@user_passes_test(lambda u: u.is_staff)
+
 def add_country(request):
     if not request.user.is_staff:
         messages.error(request, 'У вас нет прав доступа к этой странице.')

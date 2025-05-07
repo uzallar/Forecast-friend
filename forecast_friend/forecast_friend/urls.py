@@ -32,7 +32,6 @@ urlpatterns = [
     
     # Ваши URL
     path('countries/', country_list, name='country_list'),
-    path('countries/', country_list, name='country_list'),
     path('countries/edit/<int:country_id>/', edit_country, name='edit_country'),
     path('countries/delete/<int:country_id>/', delete_country, name='delete_country'),
     path('countries/add/', add_country, name='add_country'),
