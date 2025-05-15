@@ -33,6 +33,12 @@
                     <div class="fw-bold">{{ country.name }}</div>
                     <div class="text-muted">{{ country.description|default:"Описание отсутствует" }}</div>
                 </div>
+                {% if country.generate_visits_chart %}
+                <div class="chart-container mt-3">
+                    <img src="{{ country.generate_visits_chart }}" alt="График посещаемости {{ country.name }}"
+                        class="img-fluid">
+                </div>
+                {% endif %}
 
                 {% if user.is_staff %}
                 <div class="btn-group">
@@ -55,5 +61,11 @@
     </div>
 </div>
 
+<style>
+    .chart-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+</style>
 
 {% endblock %}
