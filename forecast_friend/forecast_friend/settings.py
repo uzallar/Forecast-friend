@@ -54,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.middleware.LoginRequiredMiddleware',
+    'core.middleware.VisitMiddleware',
 ]
 
 ROOT_URLCONF = 'forecast_friend.urls'
