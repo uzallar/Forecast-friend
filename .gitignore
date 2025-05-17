@@ -1,17 +1,17 @@
-# Django
-*.log
-*.pot
-*.pyc
-__pycache__/
-db.sqlite3
-media/
+# # Django
+# *.log
+# *.pot
+# *.pyc
+# __pycache__/
+# db.sqlite3
+# # media/
 
-# Virtual environment
-venv/
+# # # Virtual environment
+# # venv/
 
-# Environment variables
-.env
-.env.local
+# # # Environment variables
+# # .env
+# # .env.local
 
-.vscode/
+# # .vscode/
 
