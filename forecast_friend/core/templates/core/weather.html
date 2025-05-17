@@ -5,22 +5,34 @@
     {% if weather %}
     <div class="card">
         <div class="card-header bg-success text-white">
-            <h4 class="mb-0">Погода в {{ weather.city }}</h4>
+            <h4 class="mb-0">Погода в {{ weather.city }} на {{ weather.date }}</h4>
         </div>
         <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-4 text-center">
-                    <img src="https://openweathermap.org/img/w/{{ weather.icon }}.png" alt="Weather icon"
-                        class="img-fluid">
-                    <h3 class="mt-2">{{ weather.temperature }}°C</h3>
-                    <small>Ощущается как {{ weather.feels_like }}°C</small>
+            <div class="row">
+                {% for key, value in weather.items %}
+                {% if key != "city" and key != "date" %}
+                <div class="col-md-6 mb-2">
+                    <strong>
+                        {{ key|title|cut:"_" }}:
+                    </strong>
+                    {% if "temperature" in key %}
+                    {{ value }} °C
+                    {% elif "humidity" in key %}
+                    {{ value }} %
+                    {% elif "pressure" in key %}
+                    {{ value }} hPa
+                    {% elif "wind" in key %}
+                    {{ value }} м/с
+                    {% elif "sunrise" in key or "sunset" in key %}
+                    {{ value|time:"H:i" }}
+                    {% elif "precipitation" in key or "rain" in key or "snow" in key or "showers" in key %}
+                    {{ value }} мм
+                    {% else %}
+                    {{ value }}
+                    {% endif %}
                 </div>
-                <div class="col-8">
-                    <p><strong>Состояние:</strong> {{ weather.description|capfirst }}</p>
-                    <p><strong>Влажность:</strong> {{ weather.humidity }}%</p>
-                    <p><strong>Давление:</strong> {{ weather.pressure }} hPa</p>
-                    <p><strong>Ветер:</strong> {{ weather.wind_speed }} м/с</p>
-                </div>
+                {% endif %}
+                {% endfor %}
             </div>
         </div>
     </div>

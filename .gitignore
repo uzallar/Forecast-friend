@@ -4,12 +4,12 @@
 *.pyc
 __pycache__/
 db.sqlite3
-media/
+# media/
 
 # Virtual environment
 venv/
 
-# Environment variables
+# # Environment variables
 .env
 .env.local
 
