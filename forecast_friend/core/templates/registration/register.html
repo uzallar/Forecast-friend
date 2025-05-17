@@ -1,56 +1,79 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Register</title>
+    <title>Регистрация</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
     <style>
       body {
-        background-color: #f8f9fa;
-        height: 100vh;
+        background: linear-gradient(135deg, #74ebd5, #acb6e5);
+        min-height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
       }
-      .register-card {
-        max-width: 400px;
+      .card {
+        max-width: 450px;
         width: 100%;
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        background-color: #fff;
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <div class="card register-card shadow p-4">
-        <h2 class="text-center mb-4">Register</h2>
-        {% if messages %} {% for message in messages %}
-        <div
-          class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show"
-          role="alert"
-        >
-          {{ message }}
-          <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="alert"
-            aria-label="Close"
-          ></button>
+    <div class="card">
+      <h2 class="text-center mb-4">Регистрация</h2>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="mb-3">
+          {{ form.username.label_tag }}
+          {{ form.username }}
+          {% if form.username.errors %}
+            <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+          {% endif %}
         </div>
-        {% endfor %} {% endif %}
-        <form method="post">
-          {% csrf_token %}
-          <div class="mb-3">{{ form.as_p }}</div>
-          <button type="submit" class="btn btn-primary w-100">Register</button>
-        </form>
-        <p class="text-center mt-3">
-          Already have an account?
-          <a href="{% url 'login' %}" class="text-primary">Login</a>
-        </p>
-      </div>
+
+        <div class="mb-3">
+          {{ form.password1.label_tag }}
+          {{ form.password1 }}
+          {% if form.password1.errors and request.method == "POST" %}
+            <div class="text-danger small mt-1">{{ form.password1.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          {{ form.password2.label_tag }}
+          {{ form.password2 }}
+          {% if form.password2.errors and request.method == "POST" %}
+            <div class="text-danger small mt-1">{{ form.password2.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Зарегистрироваться</button>
+      </form>
+
+      <p class="text-center mt-4">
+        Уже есть аккаунт?
+        <a href="{% url 'login' %}">Войти</a>
+      </p>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>

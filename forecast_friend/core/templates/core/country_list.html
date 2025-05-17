@@ -1,10 +1,71 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>Список стран</h1>
-<ul class="list-group">
-    {% for country in countries %}
-    <li class="list-group-item">{{ country.name }}</li>
-    {% endfor %}
-</ul>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Список стран</h1>
+        {% if user.is_staff %}
+        <a href="{% url 'add_country' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Добавить страну
+        </a>
+        {% endif%}
+
+    </div>
+
+    <!-- Форма поиска -->
+    <form method="get" class="mb-4">
+        <div class="input-group" style="max-width: 500px;">
+            <input type="text" name="search" class="form-control"
+                placeholder="Начните вводить название страны (регистр не важен)..." value="{{ search_query }}">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i> Поиск
+            </button>
+        </div>
+        <small class="text-muted">Поиск не зависит от регистра букв</small>
+    </form>
+
+    <!-- Список стран -->
+    <div class="list-group">
+        {% for country in countries %}
+        <div class="list-group-item">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="fw-bold">{{ country.name }}</div>
+                    <div class="text-muted">{{ country.description|default:"Описание отсутствует" }}</div>
+                </div>
+                {% if country.generate_visits_chart %}
+                <div class="chart-container mt-3">
+                    <img src="{{ country.generate_visits_chart }}" alt="График посещаемости {{ country.name }}"
+                        class="img-fluid">
+                </div>
+                {% endif %}
+
+                {% if user.is_staff %}
+                <div class="btn-group">
+                    <a href="{% url 'edit_country' country.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Редактировать
+                    </a>
+                    <a href="{% url 'delete_country' country.id %}" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash"></i> Удалить
+                    </a>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+        {% empty %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Страны не найдены. Попробуйте изменить запрос.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .chart-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+</style>
+
 {% endblock %}

@@ -6,12 +6,12 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             {% if messages %}
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                {% endfor %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
             {% endif %}
 
             <div class="card shadow">
@@ -36,9 +36,9 @@
                         <dt class="col-sm-3">Дата:</dt>
                         <dd class="col-sm-9">
                             {% if ticket.date %}
-                                {{ ticket.date|date:"d.m.Y" }}
+                            {{ ticket.date|date:"d.m.Y" }}
                             {% else %}
-                                Не указана
+                            Не указана
                             {% endif %}
                         </dd>
                     </dl>
@@ -51,7 +51,13 @@
                         <span class="ms-2 text-muted">({{ ticket.pdf_file.size|filesizeformat }})</span>
                     </div>
                     {% endif %}
-
+                    <!-- Новая кнопка для рекомендаций -->
+                    <div class="mt-4">
+                        <a href="{% url 'weather' %}?city={{ ticket.city|urlencode }}&date={{ ticket.date|date:'Y-m-d' }}"
+                            class="btn btn-success">
+                            <i class="bi bi-cloud-sun"></i> Составить рекомендации
+                        </a>
+                    </div>
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                         <a href="{% url 'add_ticket' %}" class="btn btn-primary">
                             <i class="bi bi-plus-circle"></i> Добавить новый билет

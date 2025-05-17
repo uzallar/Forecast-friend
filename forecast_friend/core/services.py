@@ -4,65 +4,151 @@ from django.core.cache import cache
 from django.utils import timezone
 from requests.exceptions import RequestException
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
 class WeatherService:
     @staticmethod
-    def get_weather(city_name):
+    def get_weather(city_name, date=None):
         """
-        Получает погоду для любого введённого города через API
+        Получает прогноз погоды на дату с Open-Meteo, координаты — с OpenWeatherMap.
         """
-        cache_key = f"weather_{city_name}"
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            return cached_data
+        if isinstance(date, str):
+            try:
+                date = datetime.strptime(date, "%Y-%m-%d").date()
+            except ValueError:
+                raise ValueError("Неверный формат даты. Используйте YYYY-MM-DD")
 
-        try:
-            # 1. Сначала получаем координаты города
-            geo_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name}&limit=1&appid={settings.OPENWEATHERMAP_API_KEY}"
-            geo_response = requests.get(geo_url)
-            geo_response.raise_for_status()
-            geo_data = geo_response.json()
+        # Кеширование
+        cache_key = f"weather_meteo_{city_name}_{date.isoformat() if date else 'today'}"
+        cached = cache.get(cache_key)
+        if cached:
+            return cached
+
+        # Получаем координаты города через OpenWeatherMap
+        geo_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name}&limit=1&appid={settings.OPENWEATHERMAP_API_KEY}"
+        geo_resp = requests.get(geo_url)
+        geo_resp.raise_for_status()
+        geo_data = geo_resp.json()
+
+        if not geo_data:
+            raise ValueError("Город не найден")
+
+        lat = geo_data[0]['lat']
+        lon = geo_data[0]['lon']
+        found_city_name = geo_data[0]['name']
+
+        # Получаем прогноз с Open-Meteo
+        meteo_url = (
+            f"https://api.open-meteo.com/v1/forecast?"
+            f"latitude={lat}&longitude={lon}"
+            f"&hourly=temperature_2m,relative_humidity_2m,pressure_msl,windspeed_10m"
+            f"&timezone=auto"
+        )
+
+        meteo_resp = requests.get(meteo_url)
+        meteo_resp.raise_for_status()
+        meteo_data = meteo_resp.json()
+
+        # Парсим нужную дату
+        target_date = date or timezone.now().date()
+        hourly_times = meteo_data["hourly"]["time"]
+        temps = meteo_data["hourly"]["temperature_2m"]
+        humidities = meteo_data["hourly"]["relative_humidity_2m"]
+        pressures = meteo_data["hourly"]["pressure_msl"]
+        winds = meteo_data["hourly"]["windspeed_10m"]
+
+        # Отбираем все часы на нужную дату
+        filtered = [
+            (datetime.fromisoformat(time_str), temp, hum, pres, wind)
+            for time_str, temp, hum, pres, wind in zip(hourly_times, temps, humidities, pressures, winds)
+            if datetime.fromisoformat(time_str).date() == target_date
+        ]
+
+        if not filtered:
+            raise ValueError("Нет погодных данных на указанную дату")
+
+        # Вычисляем средние значения
+        avg_temp = round(sum(f[1] for f in filtered) / len(filtered), 1)
+        avg_hum = round(sum(f[2] for f in filtered) / len(filtered), 0)
+        avg_pres = round(sum(f[3] for f in filtered) / len(filtered), 0)
+        avg_wind = round(sum(f[4] for f in filtered) / len(filtered), 1)
+
+        result = {
+            "city": found_city_name,
+            "date": target_date,
+            "temperature": avg_temp,
+            "feels_like": avg_temp,
+            "humidity": avg_hum,
+            "pressure": avg_pres,
+            "wind_speed": avg_wind,
+            "description": "Температура по Open-Meteo",
+            "icon": "01d"  # Можешь заменить на своё или убрать
+        }
+
+        cache.set(cache_key, result, 60 * 60)  # 1 час кеш
+        return result
+
+    @staticmethod
+    def _get_current_weather(lat, lon):
+        """Получает текущую погоду по координатам"""
+        weather_url = (
+            f"https://api.openweathermap.org/data/2.5/weather?"
+            f"lat={lat}&lon={lon}"
+            f"&appid={settings.OPENWEATHERMAP_API_KEY}"
+            f"&units=metric&lang=ru"
+        )
+        response = requests.get(weather_url)
+        response.raise_for_status()
+        data = response.json()
+        
+        return {
+            'temp': data['main']['temp'],
+            'feels_like': data['main']['feels_like'],
+            'humidity': data['main']['humidity'],
+            'pressure': data['main']['pressure'],
+            'wind_speed': data['wind']['speed'],
+            'weather': data['weather'],
+        }
+
+    @staticmethod
+    def _get_forecast(lat, lon, target_date):
+        """Получает прогноз на конкретную дату"""
+        forecast_url = (
+            f"https://api.openweathermap.org/data/2.5/forecast?"
+            f"lat={lat}&lon={lon}"
+            f"&appid={settings.OPENWEATHERMAP_API_KEY}"
+            f"&units=metric&lang=ru"
+        )
+        response = requests.get(forecast_url)
+        response.raise_for_status()
+        forecast_data = response.json()
+        
+        # Находим ближайший прогноз к указанной дате
+        target_datetime = datetime.combine(target_date, datetime.min.time())
+        closest_forecast = None
+        min_diff = timedelta.max
+        
+        for item in forecast_data['list']:
+            forecast_datetime = datetime.fromtimestamp(item['dt'])
+            time_diff = abs(forecast_datetime - target_datetime)
             
-            if not geo_data:
-                raise ValueError("Город не найден")
-
-            lat = geo_data[0]['lat']
-            lon = geo_data[0]['lon']
-            found_city_name = geo_data[0]['name']
-
-            # 2. Получаем погоду по координатам
-            weather_url = (
-                f"https://api.openweathermap.org/data/2.5/weather?"
-                f"lat={lat}&lon={lon}"
-                f"&appid={settings.OPENWEATHERMAP_API_KEY}"
-                f"&units=metric&lang=ru"
-            )
-            weather_response = requests.get(weather_url)
-            weather_response.raise_for_status()
-            weather_data = weather_response.json()
-
-            # Форматируем результат
-            result = {
-                'city': found_city_name,
-                'temperature': weather_data['main']['temp'],
-                'feels_like': weather_data['main']['feels_like'],
-                'humidity': weather_data['main']['humidity'],
-                'description': weather_data['weather'][0]['description'],
-                'icon': weather_data['weather'][0]['icon'],
-            }
-            
-            cache.set(cache_key, result, settings.WEATHER_API_CACHE_TIMEOUT)
-            return result
-
-        except RequestException as e:
-            logger.error(f"Ошибка API: {e}")
-            raise ValueError("Сервис погоды временно недоступен")
-        except Exception as e:
-            logger.error(f"Ошибка: {e}")
-            raise ValueError("Не удалось получить данные о погоде")
+            if time_diff < min_diff:
+                min_diff = time_diff
+                closest_forecast = item
+        
+        if not closest_forecast:
+            raise ValueError("Прогноз на указанную дату не найден")
+        
+        return {
+            'temp': closest_forecast['main']['temp'],
+            'feels_like': closest_forecast['main']['feels_like'],
+            'humidity': closest_forecast['main']['humidity'],
+            'pressure': closest_forecast['main']['pressure'],
+            'wind_speed': closest_forecast['wind']['speed'],
+            'weather': closest_forecast['weather'],
+        }
 
 def parse_ticket_data(text):
     """
