@@ -1,11 +1,9 @@
 from django import forms
-from .models import Country, Review
+from .models import *
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.forms import UserChangeForm
-from .models import TravelTicket
-from .models import Ticket
 from datetime import datetime
 
 class CountryForm(forms.ModelForm):
@@ -132,3 +130,13 @@ class ReviewForm(forms.ModelForm):
             'text': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Оставьте ваш отзыв...'}),
         }
 
+class CustomUserCreationForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ['username', 'password1', 'password2']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Добавим Bootstrap-классы
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'

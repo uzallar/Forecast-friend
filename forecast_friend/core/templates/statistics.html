@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Статистика посещаемости по дням недели</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Всего посещений</h5>
+                    <h2>{{ total_visits }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Среднее в день</h5>
+                    <h2>{{ average_visits }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Пиковый день</h5>
+                    <h2>{{ peak_day }} ({{ peak_visits }})</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <canvas id="visitsChart" height="100"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Подключаем Chart.js через CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            const ctx = document.getElementById('visitsChart');
+            if (!ctx) {
+                console.error('Canvas element not found');
+                return;
+            }
+
+            // Преобразуем JSON строки обратно в массивы
+            const labels = JSON.parse('{{ labels|escapejs }}');
+            const data = JSON.parse('{{ data|escapejs }}');
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Количество посещений',
+                        data: data,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Количество посещений'
+                            },
+                            ticks: {
+                                precision: 0
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'День недели'
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error initializing chart:', error);
+        }
+    });
+</script>
+{% endblock %}

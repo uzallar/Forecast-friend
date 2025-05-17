@@ -1,24 +1,51 @@
 from django.shortcuts import render, redirect
-from .forms import CountryForm, RegisterForm, ProfileForm, ReviewForm
-from .models import City, Country, Review
+from django.db.models import Count
+from django.utils import timezone
+from .models import *
+from .forms import *
+
+import json
+from datetime import timedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
-from .forms import WeatherForm
-from .services import WeatherService
-from .forms import TicketForm
+from .services import *
 import os
 import pdfplumber
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .forms import TicketUploadForm
-from .models import TravelTicket
-from .models import Ticket
-from .services import parse_ticket_data  # Или используйте функцию прямо здесь
-
 from datetime import datetime
 
-from django.shortcuts import render
-from .models import Country
+def visits_statistics(request):
+    # Получаем данные за последние 7 дней
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=6)
+    
+    # Группируем по дням недели
+    visits_by_weekday = (
+        Visit.objects.filter(visit_date__range=[start_date, end_date])
+        .values('visit_date__week_day')
+        .annotate(count=Count('id'))
+        .order_by('visit_date__week_day')
+    )
+    
+    # Создаем словарь для хранения данных
+    weekdays = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
+    visits_data = {day: 0 for day in weekdays}
+    
+    # Заполняем данные
+    for item in visits_by_weekday:
+        day_index = item['visit_date__week_day'] - 1  # week_day возвращает 1-7
+        visits_data[weekdays[day_index]] = item['count']
+    
+    # Подготавливаем данные для передачи в шаблон
+    context = {
+        'labels': json.dumps(weekdays, ensure_ascii=False),
+        'data': json.dumps(list(visits_data.values())),
+        'total_visits': sum(visits_data.values()),
+        'average_visits': round(sum(visits_data.values()) / 7),
+        'peak_day': max(visits_data, key=visits_data.get),
+        'peak_visits': visits_data[max(visits_data, key=visits_data.get)],
+    }
+    
+    return render(request, 'statistics.html', context)
 
 def country_list(request):
     search_query = request.GET.get('search', '').title().strip()
@@ -82,13 +109,15 @@ def add_country(request):
 
 def register(request):
     if request.method == 'POST':
-        form = RegisterForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Регистрация прошла успешно! Теперь войдите в аккаунт.')
-            return redirect('login')  # предполагаем, что у тебя есть URL с именем 'login'
+            messages.success(request, 'Регистрация прошла успешно!')
+            return redirect('login')
+        else:
+            messages.error(request, 'Пожалуйста, исправьте ошибки ниже.')
     else:
-        form = RegisterForm()
+        form = CustomUserCreationForm()
     return render(request, 'registration/register.html', {'form': form})
 
 def profile_view(request):
@@ -100,7 +129,7 @@ def edit_profile(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Профиль успешно обновлён!')
-            return redirect('profile')  # после сохранения редиректим на страницу профиля
+            return redirect('profile')
     else:
         form = ProfileForm(instance=request.user)
 

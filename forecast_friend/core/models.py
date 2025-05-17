@@ -1,8 +1,8 @@
 # Create your models here.
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
-import os
 import seaborn as sns
 import matplotlib.pyplot as plt
 from io import BytesIO
@@ -60,6 +60,21 @@ class Country(models.Model):
         
         image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
         return f"data:image/png;base64,{image_base64}"
+    
+class Visit(models.Model):
+    ip_address = models.CharField(max_length=50)
+    user_agent = models.TextField(blank=True, null=True)
+    visit_date = models.DateField(default=timezone.now)
+    visit_time = models.TimeField(default=timezone.now)
+    path = models.CharField(max_length=255)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['visit_date']),
+        ]
+    
+    def __str__(self):
+        return f"Visit from {self.ip_address} at {self.visit_date}"
 
 class City(models.Model):
     country = models.ForeignKey(Country, on_delete=models.CASCADE)
