@@ -1,0 +1,128 @@
+/* Основные стили и анимации */
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #74ebd5, #acb6e5);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+.nav-link:hover {
+    color: #0d6efd !important;
+    text-decoration: underline;
+}
+
+/* Красивый синий стиль кнопки */
+.btn-primary {
+    background-color: #0057D9;
+    border-color: #004CC1;
+    color: #fff;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #0043B3;
+    border-color: #003C9E;
+    box-shadow: 0 0 12px rgba(0, 87, 217, 0.5);
+    transform: scale(1.03);
+}
+
+.btn-danger {
+    border-radius: 10px;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-danger:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 8px rgba(220, 53, 69, 0.6);
+}
+
+.card,
+.auth-card {
+    background-color: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.auth-card {
+    max-width: 480px;
+    margin: auto;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.reviews-container {
+    max-height: 450px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.form-control {
+    border-radius: 10px;
+}
+
+/* Плавное появление */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeInAnimation 0.6s ease forwards;
+    opacity: 0;
+}
+
+@keyframes fadeInAnimation {
+    to {
+        opacity: 1;
+    }
+}
+
+/* Эффект наведения для кнопок */
+.btn-hover-shadow:hover {
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.5);
+    transition: box-shadow 0.3s ease;
+}
+
+/* Ошибки с иконкой */
+.invalid-feedback i {
+    margin-right: 6px;
+    color: #dc3545;
+    vertical-align: middle;
+}
+
+label {
+    font-weight: 600;
+}
+
+/* Градиентный фон для карточек */
+.bg-deep-blue {
+    background: linear-gradient(90deg, #004e92, #000428);
+}
+
+/* Карточки билетов */
+.ticket-card {
+    font-family: 'Segoe UI', sans-serif;
+    transition: all 0.3s ease-in-out;
+}
+
+.ticket-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(0, 64, 128, 0.3);
+}
