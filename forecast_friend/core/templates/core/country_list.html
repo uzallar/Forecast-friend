@@ -8,8 +8,7 @@
         <a href="{% url 'add_country' %}" class="btn btn-success">
             <i class="bi bi-plus-circle"></i> Добавить страну
         </a>
-        {% endif%}
-
+        {% endif %}
     </div>
 
     <!-- Форма поиска -->
@@ -28,20 +27,18 @@
     <div class="list-group">
         {% for country in countries %}
         <div class="list-group-item">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
+            <div class="d-flex justify-content-between align-items-start flex-wrap">
+                <div class="me-3" style="flex: 1 1 300px;">
                     <div class="fw-bold">{{ country.name }}</div>
                     <div class="text-muted">{{ country.description|default:"Описание отсутствует" }}</div>
                 </div>
-                {% if country.generate_visits_chart %}
-                <div class="chart-container mt-3">
-                    <img src="{{ country.generate_visits_chart }}" alt="График посещаемости {{ country.name }}"
-                        class="img-fluid">
+
+                <div class="chart-container mt-3" style="flex: 1 1 400px;">
+                    <canvas id="chart-{{ country.id }}" height="200"></canvas>
                 </div>
-                {% endif %}
 
                 {% if user.is_staff %}
-                <div class="btn-group">
+                <div class="btn-group mt-3">
                     <a href="{% url 'edit_country' country.id %}" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-pencil"></i> Редактировать
                     </a>
@@ -50,7 +47,6 @@
                     </a>
                 </div>
                 {% endif %}
-
             </div>
         </div>
         {% empty %}
@@ -68,4 +64,45 @@
     }
 </style>
 
+<!-- Подключение Chart.js (если ещё не подключено в base.html) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- JSON-данные для JavaScript -->
+{{ chart_data|json_script:"chart-data" }}
+
+<script>
+    const chartData = JSON.parse(document.getElementById('chart-data').textContent);
+
+    chartData.forEach(country => {
+        const ctx = document.getElementById('chart-' + country.id).getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Зима', 'Весна', 'Лето', 'Осень'],
+                datasets: [{
+                    label: 'Количество посещений',
+                    data: country.tourists,
+                    backgroundColor: ['#3498db', '#2ecc71', '#f39c12', '#9b59b6'],
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: true }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        precision: 0,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

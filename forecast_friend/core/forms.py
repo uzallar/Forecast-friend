@@ -5,11 +5,14 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.forms import UserChangeForm
 from datetime import datetime
+from django.forms import modelformset_factory
+from .models import Country, SeasonalVisit
 
 class CountryForm(forms.ModelForm):
     class Meta:
         model = Country
-        fields = ['name', 'description']
+        fields = ['name', 'description', 'tourists_winter', 'tourists_spring', 'tourists_summer', 'tourists_autumn']
+
 
 
 
@@ -140,3 +143,14 @@ class CustomUserCreationForm(UserCreationForm):
         # Добавим Bootstrap-классы
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
+
+
+SeasonalVisitFormSet = modelformset_factory(
+    SeasonalVisit,
+    fields=('season', 'visit_count'),
+    extra=0,
+    can_delete=False,
+    widgets={
+        'visit_count': forms.NumberInput(attrs={'class': 'form-control'}),
+    }
+)

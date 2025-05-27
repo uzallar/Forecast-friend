@@ -47,20 +47,35 @@ def visits_statistics(request):
     
     return render(request, 'statistics.html', context)
 
+
 def country_list(request):
-    search_query = request.GET.get('search', '').title().strip()
-    
+    search_query = request.GET.get('search', '').strip()
+
     if search_query:
         countries = Country.objects.filter(name__icontains=search_query)
     else:
         countries = Country.objects.all()
-    
-    countries = countries.prefetch_related('visits')
-    
-    return render(request, 'core/country_list.html', {
+
+    # Формируем данные для диаграмм
+    chart_data = []
+    for country in countries:
+        chart_data.append({
+            'id': country.id,
+            'name': country.name,
+            'tourists': [
+                country.tourists_winter or 0,
+                country.tourists_spring or 0,
+                country.tourists_summer or 0,
+                country.tourists_autumn or 0,
+            ]
+        })
+
+    context = {
         'countries': countries,
-        'search_query': search_query
-    })
+        'chart_data': chart_data,
+        'search_query': search_query,
+    }
+    return render(request, 'core/country_list.html', context)
 
 
 
@@ -95,16 +110,15 @@ def delete_country(request, country_id):
 
 
 def add_country(request):
-    if not request.user.is_staff:
-        messages.error(request, 'У вас нет прав доступа к этой странице.')
-        return redirect('profile')
     if request.method == 'POST':
         form = CountryForm(request.POST)
         if form.is_valid():
-            form.save()
+            country = form.save()
+            messages.success(request, 'Страна успешно добавлена.')
             return redirect('country_list')
     else:
         form = CountryForm()
+
     return render(request, 'core/add_country.html', {'form': form})
 
 def register(request):
