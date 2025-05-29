@@ -27,9 +27,19 @@ class WeatherService:
             return cached
 
         # Получаем координаты города через OpenWeatherMap
-        geo_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name}&limit=1&appid={settings.OPENWEATHERMAP_API_KEY}"
-        geo_resp = requests.get(geo_url)
-        geo_resp.raise_for_status()
+        try:
+            geo_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name}&limit=1&appid={settings.OPENWEATHERMAP_API_KEY}"
+            geo_resp = requests.get(geo_url)
+            geo_resp.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            if geo_resp.status_code == 429:
+                logger.error("Превышен лимит запросов к OpenWeatherMap API")
+                raise ValueError("Превышен лимит запросов к OpenWeatherMap API")
+            raise
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Ошибка при запросе гео-данных: {e}")
+            raise ValueError("Ошибка при получении координат города")
+
         geo_data = geo_resp.json()
 
         if not geo_data:
@@ -57,12 +67,23 @@ class WeatherService:
             f"&timezone=auto"
         )
 
-        meteo_resp = requests.get(meteo_url)
-        meteo_resp.raise_for_status()
+        # Запрос к Open-Meteo
+        try:
+            meteo_resp = requests.get(meteo_url)
+            meteo_resp.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            if meteo_resp.status_code == 429:
+                logger.error("Превышен лимит запросов к Open-Meteo API")
+                raise ValueError("Превышен лимит запросов к Open-Meteo API")
+            raise
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Ошибка при запросе к Open-Meteo: {e}")
+            raise ValueError("Ошибка при получении данных погоды")
+
         meteo_data = meteo_resp.json()
 
         # Найдём индекс нужной даты
-        daily_dates = meteo_data["daily"]["time"]
+        daily_dates = meteo_data.get("daily", {}).get("time", [])
         try:
             index = daily_dates.index(target_date.isoformat())
         except ValueError:
@@ -73,13 +94,38 @@ class WeatherService:
             "city": found_city_name,
             "date": target_date,
         }
+                # Русские названия для отображения
+        field_translations = {
+            "temperature_2m_max": "Максимальная температура воздуха",
+            "temperature_2m_min": "Минимальная температура воздуха",
+            "apparent_temperature_max": "Максимальная ощущаемая температура",
+            "apparent_temperature_min": "Минимальная ощущаемая температура",
+            "precipitation_sum": "Суммарное количество осадков",
+            "rain_sum": "Количество дождя",
+            "showers_sum": "Количество ливней",
+            "snowfall_sum": "Количество снега",
+            "precipitation_hours": "Часы с осадками",
+            "windspeed_10m_max": "Максимальная скорость ветра (10 м)",
+            "windgusts_10m_max": "Максимальные порывы ветра",
+            "winddirection_10m_dominant": "Преобладающее направление ветра",
+            "shortwave_radiation_sum": "Коротковолновая солнечная радиация",
+            "et0_fao_evapotranspiration": "Эвапотранспирация по ФАО",
+            "weathercode": "Код погоды",
+            "sunrise": "Восход",
+            "sunset": "Закат",
+            "time": "Дата"
+        }
 
-        for key, values in meteo_data["daily"].items():
+
+        for key, values in meteo_data.get("daily", {}).items():
             if isinstance(values, list) and len(values) > index:
-                result[key] = values[index]
+                translated_key = field_translations.get(key, key)
+                result[translated_key] = values[index]
+
 
         cache.set(cache_key, result, 60 * 60)
         return result
+
 
     @staticmethod
     def _get_current_weather(lat, lon):
