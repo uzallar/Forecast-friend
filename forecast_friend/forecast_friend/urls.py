@@ -18,9 +18,9 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path
-from django.contrib.auth import views as auth_views  # Этот импорт критически важен!
-from core.views import *  # Ваши кастомные viewпролдролдтолдж
-
+from django.contrib.auth import views as auth_views
+from django.views.generic.base import RedirectView  # <-- добавьте этот импорт
+from core.views import *
 urlpatterns = [
     path('admin/', admin.site.urls),
     
@@ -45,4 +45,5 @@ urlpatterns = [
     path('admin/', add_admin, name='add_admin'),
     path('reviews/', review_page, name='review_page'),
     path('reviews/delete/<int:review_id>/', delete_review, name='delete_review'),
+     path('', RedirectView.as_view(url='weather/', permanent=True)),
 ]
