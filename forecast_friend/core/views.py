@@ -168,20 +168,42 @@ def weather_view(request):
     initial_data = {}
     auto_fetch = False
     ticket_id = None
-    
+
     topwear = bottomwear = footwear = accessories = None
 
     # Получаем параметры из GET-запроса
     if 'city' in request.GET:
         initial_data['city'] = request.GET['city']
         auto_fetch = True
-    
+
     if 'date' in request.GET:
         initial_data['date'] = request.GET['date']
-    
+
     if 'ticket_id' in request.GET:
         ticket_id = request.GET['ticket_id']
-    
+
+    def get_recommendations(weather):
+        temp = weather.get('temperature_2m_min', -20)
+        feels_like = weather.get('feels_like', temp)
+        wind = weather.get('apparent_temperature_max', 50)
+        precip = weather.get('precipitation_sum', 0)
+        humidity = weather.get('humidity', 50)
+        condition = weather.get('weathercode', 'Sunny')
+
+        ET0 = weather.get('et0_fao_evapotranspiration', 1)
+        K = 1.0
+        T_max = weather.get('temperature_2m_max', temp)
+        WS_max = weather.get('wind_speed_max', wind)
+
+        uv_index = calculate_uv_index(ET0, K, T_max, WS_max)
+
+        return (
+            predict_top(temp, feels_like, wind, precip, humidity, condition),
+            predict_bottom(temp, feels_like, wind, precip, humidity, condition),
+            predict_footwear(temp, feels_like, wind, precip, humidity, condition),
+            predict_accessories(temp, feels_like, wind, precip, humidity, condition, uv_index)
+        )
+
     if request.method == 'POST':
         form = WeatherForm(request.POST)
         if form.is_valid():
@@ -190,71 +212,31 @@ def weather_view(request):
             try:
                 weather_data = WeatherService.get_weather(city_name, date=date)
                 weather_data['city'] = city_name
-                weather_data['date'] = date if date else timezone.now().date()
+                weather_data['date'] = date or timezone.now().date()
 
-                # --- Вставка нового кода для рекомендаций ---
                 if weather_data:
-                    temp = weather_data.get('temperature', 20)
-                    feels_like = weather_data.get('feels_like', temp)
-                    wind = weather_data.get('wind_speed', 5)
-                    precip = weather_data.get('precipitation', 0)
-                    humidity = weather_data.get('humidity', 50)
-                    condition = weather_data.get('condition', 'Sunny')
-
-                    ET0 = weather_data.get('evapotranspiration', 4)
-                    K = 1.0
-                    T_max = weather_data.get('temp_max', temp)
-                    WS_max = weather_data.get('wind_speed_max', wind)
-
-                    uv_index = calculate_uv_index(ET0, K, T_max, WS_max)
-
-                    topwear = predict_top(temp, feels_like, wind, precip, humidity, condition)
-                    bottomwear = predict_bottom(temp, feels_like, wind, precip, humidity, condition)
-                    footwear = predict_footwear(temp, feels_like, wind, precip, humidity, condition)
-                    accessories = predict_accessories(temp, feels_like, wind, precip, humidity, condition, uv_index)
+                    topwear, bottomwear, footwear, accessories = get_recommendations(weather_data)
                 else:
                     topwear = bottomwear = footwear = accessories = "Нет данных"
-                # ---------------------------------------------
-
             except ValueError as e:
                 error = str(e)
     else:
         form = WeatherForm(initial=initial_data)
-        
-        if auto_fetch and initial_data['city']:
+
+        if auto_fetch and initial_data.get('city'):
             try:
                 date = initial_data.get('date')
                 weather_data = WeatherService.get_weather(initial_data['city'], date=date)
                 weather_data['city'] = initial_data['city']
-                weather_data['date'] = date if date else timezone.now().date()
+                weather_data['date'] = date or timezone.now().date()
 
-                # --- Вставка нового кода для рекомендаций ---
                 if weather_data:
-                    temp = weather_data.get('temperature', 20)
-                    feels_like = weather_data.get('feels_like', temp)
-                    wind = weather_data.get('wind_speed', 5)
-                    precip = weather_data.get('precipitation', 0)
-                    humidity = weather_data.get('humidity', 50)
-                    condition = weather_data.get('condition', 'Sunny')
-
-                    ET0 = weather_data.get('evapotranspiration', 4)
-                    K = 1.0
-                    T_max = weather_data.get('temp_max', temp)
-                    WS_max = weather_data.get('wind_speed_max', wind)
-
-                    uv_index = calculate_uv_index(ET0, K, T_max, WS_max)
-
-                    topwear = predict_top(temp, feels_like, wind, precip, humidity, condition)
-                    bottomwear = predict_bottom(temp, feels_like, wind, precip, humidity, condition)
-                    footwear = predict_footwear(temp, feels_like, wind, precip, humidity, condition)
-                    accessories = predict_accessories(temp, feels_like, wind, precip, humidity, condition, uv_index)
+                    topwear, bottomwear, footwear, accessories = get_recommendations(weather_data)
                 else:
                     topwear = bottomwear = footwear = accessories = "Нет данных"
-                # ---------------------------------------------
-
             except ValueError as e:
                 error = str(e)
-    
+
     return render(request, 'core/weather.html', {
         'form': form,
         'weather': weather_data,
@@ -266,6 +248,7 @@ def weather_view(request):
         'footwear': footwear,
         'accessories': accessories,
     })
+
 
 def add_ticket_view(request):
     if request.method == 'POST':

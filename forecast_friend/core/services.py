@@ -119,8 +119,8 @@ class WeatherService:
 
         for key, values in meteo_data.get("daily", {}).items():
             if isinstance(values, list) and len(values) > index:
-                translated_key = field_translations.get(key, key)
-                result[translated_key] = values[index]
+                result[key] = values[index]
+
 
 
         cache.set(cache_key, result, 60 * 60)
