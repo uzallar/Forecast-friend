@@ -1,19 +1,29 @@
-from django import forms
-from .models import *
-from django.utils import timezone
-from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.forms import UserChangeForm
 from datetime import datetime
+
+from django import forms
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+from django.contrib.auth.models import User
 from django.forms import modelformset_factory
-from .models import Country, SeasonalVisit
+from django.utils import timezone
+
+from .models import *
+
+
+SeasonalVisitFormSet = modelformset_factory(
+    SeasonalVisit,
+    fields=('season', 'visit_count'),
+    extra=0,
+    can_delete=False,
+    widgets={
+        'visit_count': forms.NumberInput(attrs={'class': 'form-control'}),
+    }
+)
+
 
 class CountryForm(forms.ModelForm):
     class Meta:
         model = Country
         fields = ['name', 'description', 'tourists_winter', 'tourists_spring', 'tourists_summer', 'tourists_autumn']
-
-
 
 
 class RegisterForm(UserCreationForm):
@@ -22,6 +32,7 @@ class RegisterForm(UserCreationForm):
     class Meta:
         model = User
         fields = ["username", "email", "password1", "password2"]
+
 
 class ProfileForm(UserChangeForm):
     first_name = forms.CharField(max_length=30, required=False)
@@ -33,8 +44,6 @@ class ProfileForm(UserChangeForm):
         fields = ('first_name', 'last_name', 'email')
 
 
-
-# forecast_friend/core/forms.py
 class WeatherForm(forms.Form):
     city = forms.CharField(
         label='Город',
@@ -57,12 +66,12 @@ class WeatherForm(forms.Form):
     def __init__(self, *args, **kwargs):
         initial = kwargs.get('initial', {})
         super().__init__(*args, **kwargs)
-        
-        # Устанавливаем начальные значения, если они переданы
+
         if 'city' in initial:
             self.fields['city'].initial = initial['city']
         if 'date' in initial:
             self.fields['date'].initial = initial['date']
+
 
 class TicketUploadForm(forms.ModelForm):
     class Meta:
@@ -77,12 +86,10 @@ class TicketUploadForm(forms.ModelForm):
         }
 
 
-
 class TicketForm(forms.ModelForm):
-    # Обязательное поле с явной валидацией формата
     date = forms.CharField(
         label='Дата (ДД.ММ.ГГГГ)',
-        required=True,  # Поле обязательно
+        required=True,
         widget=forms.TextInput(attrs={
             'placeholder': 'ДД.ММ.ГГГГ',
             'pattern': r'\d{2}\.\d{2}\.\d{4}',
@@ -106,7 +113,6 @@ class TicketForm(forms.ModelForm):
             raise forms.ValidationError("Это поле обязательно")
 
         try:
-            # Удаляем возможные пробелы и преобразуем
             date_str = date_str.strip()
             return datetime.strptime(date_str, '%d.%m.%Y').date()
         except ValueError:
@@ -118,12 +124,12 @@ class TicketForm(forms.ModelForm):
         country = cleaned_data.get('country')
         city = cleaned_data.get('city')
 
-        # Проверяем либо PDF, либо все текстовые поля
         if not pdf_file and not (country and city):
             raise forms.ValidationError(
                 "Заполните страну и город или загрузите PDF файл"
             )
         return cleaned_data
+
 
 class ReviewForm(forms.ModelForm):
     class Meta:
@@ -132,6 +138,7 @@ class ReviewForm(forms.ModelForm):
         widgets = {
             'text': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Оставьте ваш отзыв...'}),
         }
+
 
 class CustomUserCreationForm(UserCreationForm):
     class Meta:
@@ -143,14 +150,3 @@ class CustomUserCreationForm(UserCreationForm):
         # Добавим Bootstrap-классы
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
-
-
-SeasonalVisitFormSet = modelformset_factory(
-    SeasonalVisit,
-    fields=('season', 'visit_count'),
-    extra=0,
-    can_delete=False,
-    widgets={
-        'visit_count': forms.NumberInput(attrs={'class': 'form-control'}),
-    }
-)

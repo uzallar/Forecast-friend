@@ -1,6 +1,5 @@
 from joblib import load
 
-# Загрузка моделей и энкодеров
 footwear_model = load('core/ml_models/footwear_model.joblib')
 footwear_le = load('core/ml_models/footwear_label_encoder.joblib')
 

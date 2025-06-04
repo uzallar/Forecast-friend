@@ -20,12 +20,12 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <!-- Левая колонка с изображением билета -->
+                        
                         <div class="col-md-6 position-relative mb-4 mb-md-0">
                             <img src="{% static 'билет.jpg' %}" class="img-fluid border rounded" alt="Авиабилет"
                                 style="max-height: 500px; width: 100%; object-fit: contain;">
 
-                            <!-- Поля ввода поверх изображения -->
+                            
                             <div class="position-absolute" style="top: 28%; left: 15%; right: 15%;">
                                 <input type="text" class="form-control mb-2 bg-white opacity-90" id="ticket-country"
                                     name="country" placeholder="Страна"
@@ -43,12 +43,12 @@
                             </div>
                         </div>
 
-                        <!-- Правая колонка с формой -->
+                        
                         <div class="col-md-6">
                             <form method="post" enctype="multipart/form-data" id="ticket-form">
                                 {% csrf_token %}
 
-                                <!-- Скрытые поля для текстовых данных -->
+                                
                                 <input type="hidden" id="hidden-country" name="country">
                                 <input type="hidden" id="hidden-city" name="city">
                                 <input type="hidden" id="hidden-date" name="date">
@@ -94,7 +94,7 @@
         }
 
         function validateForm() {
-            // Если есть PDF, очищаем текстовые поля перед отправкой
+            
             if (pdfInput.files.length > 0) {
                 hiddenCountry.value = '';
                 hiddenCity.value = '';
@@ -102,13 +102,13 @@
                 return true;
             }
 
-            // Если PDF нет, проверяем заполнение текстовых полей
+            
             if (!countryInput.value || !cityInput.value || !dateInput.value) {
                 alert('Заполните все поля или загрузите PDF файл');
                 return false;
             }
 
-            // Синхронизируем поля перед отправкой
+            
             syncFields();
             return true;
         }
@@ -119,7 +119,7 @@
             }
         });
 
-        // Инициализация значений при загрузке
+        
         syncFields();
     });
 </script>

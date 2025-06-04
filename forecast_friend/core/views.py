@@ -1,17 +1,16 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count
-from django.utils import timezone
 from .models import *
 from .forms import *
+
+from django.utils import timezone
 
 import json
 from datetime import timedelta
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
 from .services import *
 import os
 import pdfplumber
-from datetime import datetime
 
 from core.ml_models import (
     calculate_uv_index,
@@ -21,29 +20,25 @@ from core.ml_models import (
     predict_accessories
 )
 
+
 def visits_statistics(request):
-    # Получаем данные за последние 7 дней
     end_date = timezone.now().date()
     start_date = end_date - timedelta(days=6)
-    
-    # Группируем по дням недели
+
     visits_by_weekday = (
         Visit.objects.filter(visit_date__range=[start_date, end_date])
-        .values('visit_date__week_day')
-        .annotate(count=Count('id'))
-        .order_by('visit_date__week_day')
+            .values('visit_date__week_day')
+            .annotate(count=Count('id'))
+            .order_by('visit_date__week_day')
     )
-    
-    # Создаем словарь для хранения данных
+
     weekdays = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
     visits_data = {day: 0 for day in weekdays}
-    
-    # Заполняем данные
+
     for item in visits_by_weekday:
-        day_index = item['visit_date__week_day'] - 1  # week_day возвращает 1-7
+        day_index = item['visit_date__week_day'] - 2
         visits_data[weekdays[day_index]] = item['count']
-    
-    # Подготавливаем данные для передачи в шаблон
+
     context = {
         'labels': json.dumps(weekdays, ensure_ascii=False),
         'data': json.dumps(list(visits_data.values())),
@@ -52,8 +47,8 @@ def visits_statistics(request):
         'peak_day': max(visits_data, key=visits_data.get),
         'peak_visits': visits_data[max(visits_data, key=visits_data.get)],
     }
-    
-    return render(request, 'statistics.html', context)
+
+    return render(request, 'core/statistics.html', context)
 
 
 def country_list(request):
@@ -64,7 +59,6 @@ def country_list(request):
     else:
         countries = Country.objects.all()
 
-    # Формируем данные для диаграмм
     chart_data = []
     for country in countries:
         chart_data.append({
@@ -86,7 +80,6 @@ def country_list(request):
     return render(request, 'core/country_list.html', context)
 
 
-
 def edit_country(request, country_id):
     if not request.user.is_staff:
         messages.error(request, 'У вас нет прав доступа к этой странице.')
@@ -99,7 +92,7 @@ def edit_country(request, country_id):
             return redirect('country_list')
     else:
         form = CountryForm(instance=country)
-    
+
     return render(request, 'core/edit_country.html', {
         'form': form,
         'country': country
@@ -118,6 +111,9 @@ def delete_country(request, country_id):
 
 
 def add_country(request):
+    if not request.user.is_staff:
+        messages.error(request, 'У вас нет прав доступа к этой странице.')
+        return redirect('profile')
     if request.method == 'POST':
         form = CountryForm(request.POST)
         if form.is_valid():
@@ -128,6 +124,7 @@ def add_country(request):
         form = CountryForm()
 
     return render(request, 'core/add_country.html', {'form': form})
+
 
 def register(request):
     if request.method == 'POST':
@@ -142,8 +139,10 @@ def register(request):
         form = CustomUserCreationForm()
     return render(request, 'registration/register.html', {'form': form})
 
+
 def profile_view(request):
-    return render(request, 'profile.html', {'user': request.user})
+    return render(request, 'profile/profile.html', {'user': request.user})
+
 
 def edit_profile(request):
     if request.method == 'POST':
@@ -155,11 +154,7 @@ def edit_profile(request):
     else:
         form = ProfileForm(instance=request.user)
 
-    return render(request, 'edit_profile.html', {'form': form})
-from django.utils import timezone
-from .ml_logic import ForecastFriendModels
-from .forms import WeatherForm
-from .services import WeatherService
+    return render(request, 'profile/edit_profile.html', {'form': form})
 
 
 def weather_view(request):
@@ -171,7 +166,6 @@ def weather_view(request):
 
     topwear = bottomwear = footwear = accessories = None
 
-    # Получаем параметры из GET-запроса
     if 'city' in request.GET:
         initial_data['city'] = request.GET['city']
         auto_fetch = True
@@ -252,7 +246,6 @@ def weather_view(request):
 
 def add_ticket_view(request):
     if request.method == 'POST':
-        # Определяем какую форму использовать
         if 'pdf_file' in request.FILES:
             form = TicketUploadForm(request.POST, request.FILES)
             is_pdf = True
@@ -263,68 +256,58 @@ def add_ticket_view(request):
         if form.is_valid():
             try:
                 if is_pdf:
-                    # Создаем объект билета, но пока не сохраняем
                     ticket = form.save(commit=False)
-                    
-                    # Обработка PDF
                     with pdfplumber.open(ticket.pdf_file) as pdf:
                         text = "\n".join(page.extract_text() for page in pdf.pages)
                         data = parse_ticket_data(text)
-                        
-                        # Заполняем поля из распарсенных данных
+
                         ticket.country = data.get('country', '')
                         ticket.city = data.get('city', '')
                         ticket.date = data.get('date', None)
-                        
-                        # Сохраняем билет в базу
+
                         ticket.save()
-                        
+
                         messages.success(request, '✅ Билет успешно обработан из PDF!')
                         return redirect('ticket_detail', pk=ticket.pk)
                 else:
-                    # Обработка обычной формы
                     ticket = form.save()
                     messages.success(request, '✅ Билет успешно сохранён!')
                     return redirect('ticket_detail', pk=ticket.pk)
-                    
+
             except Exception as e:
-                # Удаляем временный файл, если он был создан
                 if is_pdf and 'ticket' in locals() and hasattr(ticket, 'pdf_file'):
                     try:
                         os.remove(ticket.pdf_file.path)
                     except:
                         pass
-                
+
                 messages.error(request, f'❌ Ошибка: {str(e)}')
                 return render(request, 'core/add_ticket.html', {
                     'pdf_form': TicketUploadForm(),
                     'text_form': TicketForm()
                 })
-    
-    # GET запрос или невалидная форма
+
     return render(request, 'core/add_ticket.html', {
         'pdf_form': TicketUploadForm(),
         'text_form': TicketForm()
     })
 
-from django.shortcuts import get_object_or_404
 
 def ticket_detail_view(request, pk):
-    # Пробуем найти билет в обеих моделях
-    ticket = get_object_or_404(Ticket, pk=pk) if Ticket.objects.filter(pk=pk).exists() else get_object_or_404(TravelTicket, pk=pk)
-    
-    # Форматируем дату
+    ticket = get_object_or_404(Ticket, pk=pk) if Ticket.objects.filter(pk=pk).exists() else get_object_or_404(
+        TravelTicket, pk=pk)
+
     formatted_date = ticket.date.strftime('%d.%m.%Y') if ticket.date else 'Дата не указана'
-    
-    # Проверяем источник данных
+
     data_source = 'PDF' if hasattr(ticket, 'pdf_file') and ticket.pdf_file else 'текстовые поля'
-    
+
     return render(request, 'core/ticket_detail.html', {
         'ticket': ticket,
         'formatted_date': formatted_date,
         'data_source': data_source
     })
-    
+
+
 def review_page(request):
     reviews = Review.objects.filter(is_visible=True).order_by('-created_at')
     form = ReviewForm(request.POST or None)
@@ -334,17 +317,17 @@ def review_page(request):
         review.save()
         return redirect('review_page')
 
-    return render(request, 'reviews.html', {'form': form, 'reviews': reviews})
+    return render(request, 'reviews/reviews.html', {'form': form, 'reviews': reviews})
+
 
 def delete_review(request, review_id):
+    if not request.user.is_staff:
+        messages.error(request, 'У вас нет прав доступа к этой странице.')
+        return redirect('profile')
     review = Review.objects.get(id=review_id)
     review.delete()
     return redirect('review_page')
 
-def travel_recommendations(request):
-    # Здесь будет логика для рекомендаций по поездке
-    return render(request, 'core/travel_recommendations.html')
 
 def add_admin(request):
-    # Здесь будет логика для рекомендаций по поездке
     return render(request, 'core/add_admin.html')

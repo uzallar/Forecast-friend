@@ -1,19 +1,17 @@
+import logging
+from datetime import datetime, timedelta
+
 import requests
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
-from requests.exceptions import RequestException
-import logging
-from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
+
 
 class WeatherService:
     @staticmethod
     def get_weather(city_name, date=None):
-        """
-        Получает прогноз погоды на дату с Open-Meteo, используя дневной forecast.
-        """
         if isinstance(date, str):
             try:
                 date = datetime.strptime(date, "%Y-%m-%d").date()
@@ -25,8 +23,6 @@ class WeatherService:
         cached = cache.get(cache_key)
         if cached:
             return cached
-
-        # Получаем координаты города через OpenWeatherMap
         try:
             geo_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name}&limit=1&appid={settings.OPENWEATHERMAP_API_KEY}"
             geo_resp = requests.get(geo_url)
@@ -49,7 +45,6 @@ class WeatherService:
         lon = geo_data[0]['lon']
         found_city_name = geo_data[0]['name']
 
-        # Формируем список всех доступных daily параметров
         daily_params = ",".join([
             "temperature_2m_max", "temperature_2m_min",
             "apparent_temperature_max", "apparent_temperature_min",
@@ -67,7 +62,6 @@ class WeatherService:
             f"&timezone=auto"
         )
 
-        # Запрос к Open-Meteo
         try:
             meteo_resp = requests.get(meteo_url)
             meteo_resp.raise_for_status()
@@ -82,19 +76,16 @@ class WeatherService:
 
         meteo_data = meteo_resp.json()
 
-        # Найдём индекс нужной даты
         daily_dates = meteo_data.get("daily", {}).get("time", [])
         try:
             index = daily_dates.index(target_date.isoformat())
         except ValueError:
             raise ValueError("Нет погодных данных на указанную дату")
 
-        # Соберем все данные по индексу
         result = {
             "city": found_city_name,
             "date": target_date,
         }
-                # Русские названия для отображения
         field_translations = {
             "temperature_2m_max": "Максимальная температура воздуха",
             "temperature_2m_min": "Минимальная температура воздуха",
@@ -115,17 +106,12 @@ class WeatherService:
             "sunset": "Закат",
             "time": "Дата"
         }
-
-
         for key, values in meteo_data.get("daily", {}).items():
             if isinstance(values, list) and len(values) > index:
                 result[key] = values[index]
 
-
-
         cache.set(cache_key, result, 60 * 60)
         return result
-
 
     @staticmethod
     def _get_current_weather(lat, lon):
@@ -183,6 +169,7 @@ class WeatherService:
             'wind_speed': closest_forecast['wind']['speed'],
             'weather': closest_forecast['weather'],
         }
+
 
 def parse_ticket_data(text):
     lines = [line.strip() for line in text.split('\n') if line.strip()]

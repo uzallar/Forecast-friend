@@ -11,7 +11,7 @@
         {% endif %}
     </div>
 
-    <!-- Форма поиска -->
+    
     <form method="get" class="mb-4">
         <div class="input-group" style="max-width: 500px;">
             <input type="text" name="search" class="form-control"
@@ -23,7 +23,7 @@
         <small class="text-muted">Поиск не зависит от регистра букв</small>
     </form>
 
-    <!-- Список стран -->
+
     <div class="list-group">
         {% for country in countries %}
         <div class="list-group-item">
@@ -64,10 +64,10 @@
     }
 </style>
 
-<!-- Подключение Chart.js (если ещё не подключено в base.html) -->
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- JSON-данные для JavaScript -->
+
 {{ chart_data|json_script:"chart-data" }}
 
 <script>
