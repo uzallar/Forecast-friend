@@ -13,9 +13,29 @@
         <div class="card-body">
             <div class="row">
                 {% for key, value in weather.items %}
-                {% if key != "city" and key != "date" %}
+                {% if key != "city" and key != "date" and "time" not in key %}
                 <div class="col-md-6 mb-2">
-                    <strong>{{ key|title|cut:"_" }}:</strong>
+                    <strong>
+                        {% if key == "temperature_2m_max" %}Максимальная температура воздуха
+                        {% elif key == "temperature_2m_min" %}Минимальная температура воздуха
+                        {% elif key == "apparent_temperature_max" %}Максимальная ощущаемая температура
+                        {% elif key == "apparent_temperature_min" %}Минимальная ощущаемая температура
+                        {% elif key == "precipitation_sum" %}Суммарное количество осадков
+                        {% elif key == "rain_sum" %}Количество дождя
+                        {% elif key == "showers_sum" %}Количество ливней
+                        {% elif key == "snowfall_sum" %}Количество снега
+                        {% elif key == "precipitation_hours" %}Часы с осадками
+                        {% elif key == "windspeed_10m_max" %}Максимальная скорость ветра (10 м)
+                        {% elif key == "windgusts_10m_max" %}Максимальные порывы ветра
+                        {% elif key == "winddirection_10m_dominant" %}Преобладающее направление ветра
+                        {% elif key == "shortwave_radiation_sum" %}Коротковолновая солнечная радиация
+                        {% elif key == "et0_fao_evapotranspiration" %}Эвапотранспирация по ФАО
+                        {% elif key == "weathercode" %}Код погоды
+                        {% elif key == "sunrise" %}Восход
+                        {% elif key == "sunset" %}Закат
+                        {% else %}{{ key|title|cut:"_" }}
+                        {% endif %}:
+                    </strong>
                     {% if "temperature" in key %}
                     {{ value }} °C
                     {% elif "humidity" in key %}
@@ -24,8 +44,6 @@
                     {{ value }} hPa
                     {% elif "wind" in key %}
                     {{ value }} м/с
-                    {% elif "sunrise" in key or "sunset" in key %}
-                    {{ value|time:"H:i" }}
                     {% else %}
                     {{ value }}
                     {% endif %}

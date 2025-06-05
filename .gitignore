@@ -1,19 +1,25 @@
-# Django
-*.log
-*.pot
+# Python
 *.pyc
 __pycache__/
-# db.sqlite3
-# media/
+*.pyo
+*.pyd
+*.log
 
-# Virtual environment
+# Django
+*.pot
+db.sqlite3
+media/
+
+
 venv/
-.joblib
-# # Environment variables
-# .env
-# .env.local
+.env
+.env.*
 
 .vscode/
+
 *.joblib
+
+
 *.joblib:Zone.Identifier
 
+.DS_Store
